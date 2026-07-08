@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Chamados · Prefeitura de Delta</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+
+    <script>
+        (function(){var t=localStorage.getItem('theme');if(!t)t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';document.documentElement.setAttribute('data-theme',t);})();
+        (function(){if(localStorage.getItem('sidebarMini')==='1')document.documentElement.classList.add('sidebar-mini');})();
+    </script>
+
+    <style>
+        :root {
+            --accent:#4f46e5;--accent-hover:#4338ca;--accent-soft:rgba(79,70,229,.10);--accent-ring:rgba(79,70,229,.20);
+            --bg-1:#f0f2f8;--bg-2:#e6e9f2;--surface:#ffffff;--surface-2:#f6f7f9;
+            --border:#e2e5ec;--border-strong:#cdd0d9;--text:#14171f;--text-muted:#6b7280;--text-soft:#9aa1ac;
+            --green:#16a34a;--green-soft:rgba(22,163,74,.12);
+            --amber:#d97706;--amber-soft:rgba(217,119,6,.14);
+            --red:#dc2626;--red-soft:rgba(220,38,38,.12);
+            --blue:#0ea5e9;--blue-soft:rgba(14,165,233,.12);
+            --purple:#7c3aed;--purple-soft:rgba(124,58,237,.12);
+            --shadow:0 1px 3px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.08);
+            --scrollbar-thumb:rgba(20,23,31,.18);--scrollbar-thumb-hover:rgba(20,23,31,.34);
+            --radius:14px;--radius-sm:9px;--sidebar-w:240px;--topbar-h:58px;
+        }
+        html[data-theme="dark"] {
+            --accent:#6366f1;--accent-hover:#818cf8;--accent-soft:rgba(99,102,241,.16);--accent-ring:rgba(99,102,241,.30);
+            --bg-1:#0a0c10;--bg-2:#11141b;--surface:#15181f;--surface-2:#1b1f27;
+            --border:#262b34;--border-strong:#333945;--text:#f1f3f6;--text-muted:#99a1ad;--text-soft:#6b7280;
+            --green:#34d399;--green-soft:rgba(52,211,153,.14);
+            --amber:#fbbf24;--amber-soft:rgba(251,191,36,.14);
+            --red:#f87171;--red-soft:rgba(248,113,113,.14);
+            --blue:#38bdf8;--blue-soft:rgba(56,189,248,.14);
+            --purple:#a78bfa;--purple-soft:rgba(167,139,250,.14);
+            --shadow:0 1px 4px rgba(0,0,0,.4),0 12px 36px rgba(0,0,0,.5);
+            --scrollbar-thumb:rgba(255,255,255,.14);--scrollbar-thumb-hover:rgba(255,255,255,.28);
+        }
+        *{box-sizing:border-box;margin:0;padding:0;}
+        body{background:var(--bg-1);color:var(--text);font-family:'Inter',sans-serif;font-size:.82rem;min-height:100vh;overflow-x:hidden;transition:background-color .3s,color .3s;}
+
+        /* ===== SCROLLBARS (finos, minimalistas, adaptam ao tema) ===== */
+        *{scrollbar-width:thin;scrollbar-color:var(--scrollbar-thumb) transparent;}
+        ::-webkit-scrollbar{width:8px;height:8px;}
+        ::-webkit-scrollbar-track{background:transparent;}
+        ::-webkit-scrollbar-thumb{background:var(--scrollbar-thumb);border-radius:50px;border:2px solid transparent;background-clip:padding-box;}
+        ::-webkit-scrollbar-thumb:hover{background:var(--scrollbar-thumb-hover);background-clip:padding-box;}
+        ::-webkit-scrollbar-corner{background:transparent;}
+
+        /* ===== TOPBAR ===== */
+        .topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px 0 16px;z-index:1100;}
+        .topbar-logo{font-size:.96rem;font-weight:800;letter-spacing:-.02em;display:flex;align-items:center;gap:9px;}
+        .topbar-logo i{color:var(--accent);font-size:1.2rem;}
+        .topbar-right{display:flex;align-items:center;gap:8px;}
+        .op-badge{background:var(--surface-2);border:1px solid var(--border);color:var(--text-muted);padding:5px 12px;border-radius:50px;font-size:.73rem;font-weight:600;}
+        .icon-btn{width:34px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2);color:var(--text-muted);display:grid;place-items:center;cursor:pointer;font-size:.95rem;transition:.2s;}
+        .icon-btn:hover{color:var(--text);border-color:var(--border-strong);}
+        .adm-btn{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:var(--radius-sm);padding:6px 13px;font-size:.76rem;font-weight:600;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
+        .adm-btn:hover{border-color:var(--border-strong);transform:translateY(-1px);}
+        .adm-btn-danger{color:var(--red);border-color:var(--red);background:var(--red-soft);}
+        .adm-btn-danger:hover{background:var(--red);color:#fff;}
+        .subtabs{display:flex;gap:6px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px;margin-bottom:16px;width:fit-content;}
+        .subtab-btn{border:none;background:transparent;color:var(--text-muted);font-weight:600;font-size:.8rem;padding:8px 16px;border-radius:8px;cursor:pointer;transition:.15s;font-family:inherit;display:inline-flex;align-items:center;gap:7px;}
+        .subtab-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow);}
+
+        /* ===== PRESENÇA DA EQUIPE (topbar) ===== */
+        .presence-title{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-soft);display:flex;align-items:center;gap:5px;margin-right:2px;}
+        .presence-bar{display:flex;align-items:flex-start;gap:9px;}
+        .presence-item{display:flex;flex-direction:column;align-items:center;gap:3px;width:52px;}
+        .presence-avatar{position:relative;width:33px;height:33px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.82rem;background:var(--surface-2);color:var(--text-soft);border:1px solid var(--border);transition:.2s;}
+        .presence-avatar.me{box-shadow:0 0 0 2px var(--accent-ring);}
+        .presence-dot{position:absolute;right:-2px;bottom:-2px;width:11px;height:11px;border-radius:50%;border:2.5px solid var(--surface);background:var(--text-soft);}
+        .presence-dot.online{background:var(--green);}
+        .presence-name{font-size:.6rem;font-weight:600;color:var(--text-muted);max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+        .presence-item.off .presence-name{color:var(--text-soft);}
+        @media(max-width:620px){.presence-title{display:none;}.presence-name{display:none;}.presence-item{width:auto;}}
+
+        /* ===== SIDEBAR ===== */
+        .sidebar{position:fixed;top:var(--topbar-h);left:0;width:var(--sidebar-w);height:calc(100vh - var(--topbar-h));background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 10px 20px;z-index:1000;overflow-y:auto;}
+        .sidebar-section-label{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-soft);padding:10px 10px 5px;}
+        .nav-item{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:.81rem;font-weight:500;color:var(--text-muted);transition:.18s;border:1px solid transparent;text-decoration:none;position:relative;}
+        .nav-item:hover{background:var(--surface-2);color:var(--text);border-color:var(--border);}
+        .nav-item.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-ring);font-weight:700;}
+        .nav-item i{font-size:1rem;width:18px;text-align:center;}
+        .nav-badge{margin-left:auto;color:#fff;font-size:.62rem;font-weight:800;padding:1px 7px;border-radius:50px;min-width:20px;text-align:center;background:var(--accent);}
+        .nav-badge.verde{background:var(--green);}
+        .nav-badge.vermelho{background:var(--red);}
+        .nav-badge.amber{background:var(--amber);}
+        .nav-badge.zero{background:var(--border-strong);color:var(--text-muted);}
+        .sidebar-divider{border:none;border-top:1px solid var(--border);margin:8px 0;}
+        .sidebar-footer{padding:10px 12px;font-size:.7rem;color:var(--text-soft);display:flex;align-items:center;gap:7px;margin-top:auto;border-top:1px solid var(--border);}
+
+        /* ===== SIDEBAR MINI (só ícones; expande no hover) ===== */
+        html.sidebar-mini{--sidebar-w:68px;}
+        .sidebar-mini .sidebar{width:var(--sidebar-w);overflow-x:hidden;z-index:1200;transition:width .22s ease,box-shadow .22s ease;}
+        .sidebar-mini .sidebar:hover{width:240px;box-shadow:var(--shadow);}
+        .sidebar-mini .nav-item{white-space:nowrap;}
+        .sidebar-mini .nav-label,
+        .sidebar-mini .nav-badge,
+        .sidebar-mini .sidebar-section-label,
+        .sidebar-mini .filtros-block,
+        .sidebar-mini .sidebar-actions,
+        .sidebar-mini .sidebar-footer{opacity:0;pointer-events:none;transition:opacity .12s ease;}
+        .sidebar-mini .sidebar:hover .nav-label,
+        .sidebar-mini .sidebar:hover .nav-badge,
+        .sidebar-mini .sidebar:hover .sidebar-section-label,
+        .sidebar-mini .sidebar:hover .filtros-block,
+        .sidebar-mini .sidebar:hover .sidebar-actions,
+        .sidebar-mini .sidebar:hover .sidebar-footer{opacity:1;pointer-events:auto;transition-delay:.04s;}
+
+        /* ===== MAIN ===== */
+        .main-wrap{margin-left:var(--sidebar-w);padding-top:var(--topbar-h);min-height:100vh;transition:margin-left .22s ease;}
+        .main-inner{padding:22px 24px 48px;}
+
+        /* ===== DASHBOARD ===== */
+        .dash-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-bottom:18px;}
+        .dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 14px;box-shadow:var(--shadow);position:relative;overflow:hidden;cursor:pointer;transition:.2s ease;}
+        .dash-card:hover{transform:translateY(-2px);box-shadow:0 10px 32px rgba(0,0,0,.13);}
+        .dash-card-accent{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:var(--radius) 0 0 var(--radius);}
+        .dash-icon{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:1.1rem;margin-bottom:10px;}
+        .dash-label{font-size:.68rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;}
+        .dash-value{font-size:2rem;font-weight:800;letter-spacing:-.04em;line-height:1;}
+        .dash-sub{font-size:.67rem;color:var(--text-soft);margin-top:5px;}
+        .dash-trend{font-size:.65rem;font-weight:700;margin-top:6px;display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:50px;}
+
+        /* cores dos cards */
+        .dc-amber .dash-icon{background:var(--amber-soft);color:var(--amber);}
+        .dc-amber .dash-card-accent{background:var(--amber);}
+        .dc-amber .dash-value{color:var(--amber);}
+        .dc-amber .dash-trend{background:var(--amber-soft);color:var(--amber);}
+
+        .dc-red .dash-icon{background:var(--red-soft);color:var(--red);}
+        .dc-red .dash-card-accent{background:var(--red);}
+        .dc-red .dash-value{color:var(--red);}
+        .dc-red .dash-trend{background:var(--red-soft);color:var(--red);}
+
+        .dc-blue .dash-icon{background:var(--blue-soft);color:var(--blue);}
+        .dc-blue .dash-card-accent{background:var(--blue);}
+        .dc-blue .dash-value{color:var(--blue);}
+        .dc-blue .dash-trend{background:var(--blue-soft);color:var(--blue);}
+
+        .dc-green .dash-icon{background:var(--green-soft);color:var(--green);}
+        .dc-green .dash-card-accent{background:var(--green);}
+        .dc-green .dash-value{color:var(--green);}
+        .dc-green .dash-trend{background:var(--green-soft);color:var(--green);}
+
+        .dc-purple .dash-icon{background:var(--purple-soft);color:var(--purple);}
+        .dc-purple .dash-card-accent{background:var(--purple);}
+        .dc-purple .dash-value{color:var(--purple);}
+
+        .dc-accent .dash-icon{background:var(--accent-soft);color:var(--accent);}
+        .dc-accent .dash-card-accent{background:var(--accent);}
+        .dc-accent .dash-value{color:var(--accent);}
+
+        /* Painel gráfico + recentes */
+        .dash-bottom{display:grid;grid-template-columns:300px 1fr;gap:18px;margin-bottom:22px;}
+        .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+        .chart-card-title{font-size:.82rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+        .chart-card-title i{color:var(--accent);}
+        .donut-wrap{position:relative;width:180px;height:180px;margin:0 auto 12px;}
+        .donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;}
+        .donut-center-val{font-size:1.7rem;font-weight:800;line-height:1;}
+        .donut-center-lbl{font-size:.62rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+        .chart-legend{display:flex;flex-direction:column;gap:7px;margin-top:12px;}
+        .legend-item{display:flex;align-items:center;justify-content:space-between;font-size:.75rem;}
+        .legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+        .legend-label{display:flex;align-items:center;gap:6px;color:var(--text-muted);}
+        .legend-count{font-weight:700;color:var(--text);}
+
+        /* Chamados novos no dash */
+        .recentes-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);}
+        .recentes-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+        .recentes-title{font-size:.82rem;font-weight:700;display:flex;align-items:center;gap:7px;}
+        .recentes-title i{color:var(--red);}
+        .pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--red);animation:pulse 1.6s infinite;display:inline-block;}
+
+        /* Section header */
+        .section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:12px;flex-wrap:wrap;}
+        .section-title{font-size:.9rem;font-weight:700;display:flex;align-items:center;gap:8px;}
+        .section-title i{color:var(--accent);}
+
+        /* Inputs */
+        .adm-input,.adm-select,.adm-textarea{background:var(--surface-2);border:1px solid var(--border);color:var(--text);border-radius:var(--radius-sm);padding:7px 11px;font-size:.79rem;font-family:inherit;transition:border-color .15s,box-shadow .15s;}
+        .adm-input:focus,.adm-select:focus,.adm-textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring);}
+        .adm-select{cursor:pointer;}
+        .adm-textarea{width:100%;resize:vertical;}
+
+        /* Cards de chamado */
+        .grid-chamados{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:14px;}
+        .card-chamado{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);position:relative;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:.2s ease;}
+        .card-chamado:hover{border-color:var(--border-strong);transform:translateY(-2px);}
+        .card-chamado.expandido{border-color:var(--accent);box-shadow:0 16px 40px rgba(0,0,0,.18);}
+        .sla-bar{height:4px;width:100%;}
+        .bg-urg-alta{background:var(--red);}
+        .bg-urg-media{background:var(--amber);}
+        .bg-urg-baixa{background:var(--green);}
+        .card-summary{padding:12px 14px;}
+        .card-head-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+        .card-titulo{font-size:.85rem;font-weight:700;letter-spacing:-.01em;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+        .urg-chip{flex-shrink:0;font-size:.58rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:3px 8px;border-radius:50px;white-space:nowrap;}
+        .urg-chip.alta{background:var(--red-soft);color:var(--red);}
+        .urg-chip.media{background:var(--amber-soft);color:var(--amber);}
+        .urg-chip.baixa{background:var(--green-soft);color:var(--green);}
+        .card-meta{font-size:.75rem;line-height:1.6;margin-top:9px;}
+        .card-meta .muted{color:var(--text-muted);}
+        .card-meta i{color:var(--text-soft);width:15px;}
+        .card-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:11px;padding-top:10px;border-top:1px solid var(--border);}
+        .card-foot-left{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+        .card-foot-right{display:flex;align-items:center;gap:9px;flex-shrink:0;}
+        .resp-pill{font-size:.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:3px 9px;border-radius:50px;display:inline-flex;align-items:center;gap:5px;background:var(--accent-soft);color:var(--accent);}
+        .resp-pill.pendente{background:var(--amber-soft);color:var(--amber);}
+        .resp-pill.ok{background:var(--green-soft);color:var(--green);}
+        .notif-chip{font-size:.62rem;font-weight:800;color:#fff;background:#ef4444;padding:2px 8px;border-radius:50px;display:inline-flex;align-items:center;gap:4px;animation:pulse 1.6s infinite;}
+        .card-date{font-size:.66rem;color:var(--text-soft);white-space:nowrap;}
+        .expand-ico{color:var(--text-muted);font-size:.95rem;transition:transform .25s;}
+        .card-chamado.expandido .expand-ico{transform:rotate(180deg);color:var(--accent);}
+        .card-details{display:none;padding:0 14px 13px;}
+        .card-chamado.expandido .card-details{display:block;animation:reveal .25s ease;}
+        @keyframes reveal{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+        .desc-box{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--accent);padding:10px 12px;border-radius:var(--radius-sm);margin:4px 0 10px;color:var(--text);line-height:1.5;font-size:.78rem;}
+        .chat-box{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);max-height:160px;overflow-y:auto;padding:10px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px;}
+        .chat-box:empty{display:none;}
+        .msg-tec{color:#fff;background:var(--accent);align-self:flex-end;max-width:92%;text-align:right;padding:6px 9px;border-radius:10px 10px 2px 10px;font-size:.74rem;font-weight:500;}
+        .msg-user{color:var(--text);background:var(--surface);border:1px solid var(--border);align-self:flex-start;max-width:92%;text-align:left;padding:6px 9px;border-radius:10px 10px 10px 2px;font-size:.74rem;}
+        .msg-data{font-size:.58rem;opacity:.7;}
+        .rastro-line{font-size:.68rem;color:var(--text-muted);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+        .card-actions{display:flex;flex-direction:column;gap:6px;}
+        .act-row{display:flex;gap:6px;}
+        .act{border:1px solid transparent;border-radius:var(--radius-sm);padding:8px 10px;font-size:.74rem;font-weight:600;cursor:pointer;transition:.18s;width:100%;font-family:inherit;}
+        .act:hover{transform:translateY(-1px);}
+        .act-primary{background:var(--accent);color:#fff;box-shadow:0 6px 16px var(--accent-ring);}
+        .act-primary:hover{background:var(--accent-hover);}
+        .act-msg{background:var(--surface);border-color:var(--border);color:var(--text);flex:1;}
+        .act-msg:hover{border-color:var(--accent);color:var(--accent);}
+        .act-fim{background:var(--green-soft);border-color:var(--green);color:var(--green);flex:1;}
+        .act-fim:hover{background:var(--green);color:#fff;}
+        .act-transf{background:transparent;border-color:var(--border-strong);color:var(--text-muted);}
+        .act-transf:hover{border-color:var(--text-muted);color:var(--text);}
+
+        /* empty state */
+        .empty-state{grid-column:1/-1;text-align:center;padding:52px 20px;color:var(--text-soft);display:flex;flex-direction:column;align-items:center;gap:10px;}
+        .empty-state i{font-size:2.4rem;opacity:.35;}
+
+        /* Modals */
+        #modalFinalizar,#modalTransferir{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);padding:22px;border-radius:var(--radius);z-index:9999;box-shadow:0 24px 80px rgba(0,0,0,.45);width:400px;max-width:calc(100vw - 32px);border:1px solid var(--border);}
+        .modal-title{font-size:.98rem;font-weight:700;margin-bottom:12px;}
+        .modal-sub{font-size:.78rem;color:var(--text-muted);margin-bottom:12px;}
+        .modal-actions{display:flex;gap:10px;margin-top:14px;}
+        .flex1{flex:1;}
+
+        .app-footer{text-align:center;font-size:.72rem;color:var(--text-soft);padding:24px 12px 10px;}
+        @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+        @media(max-width:900px){
+            .dash-row{grid-template-columns:1fr 1fr;}
+            .dash-bottom{grid-template-columns:1fr;}
+        }
+        @media(max-width:768px){
+            :root{--sidebar-w:0px;}
+            .sidebar{transform:translateX(-100%);transition:transform .3s;width:240px;}
+            .sidebar.open{transform:translateX(0);}
+            .main-wrap{margin-left:0;}
+        }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+    <div class="topbar-logo">
+        <button id="sidebarToggle" class="icon-btn" title="Minimizar menu"><i class="bi bi-list"></i></button>
+        <i class="bi bi-kanban-fill"></i>
+        <span>Delta Cyber · Chamados</span>
+    </div>
+    <div class="topbar-right">
+        <span class="presence-title"><i class="bi bi-people-fill"></i> Equipe</span>
+        <div class="presence-bar" id="presenceBar"></div>
+    </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-section-label">Visão Geral</div>
+    <a class="nav-item active" data-filtro="Dashboard" onclick="trocarVisao('Dashboard',this)">
+        <i class="bi bi-grid-1x2-fill"></i> <span class="nav-label">Dashboard</span>
+    </a>
+    <hr class="sidebar-divider">
+    <div class="sidebar-section-label">Chamados</div>
+    <a class="nav-item" data-filtro="Abertos" onclick="trocarVisao('Abertos',this)">
+        <i class="bi bi-stars"></i> <span class="nav-label">Novos (sem técnico)</span>
+        <span class="nav-badge vermelho" id="nb-abertos">0</span>
+    </a>
+    <a class="nav-item" data-filtro="Pendentes" onclick="trocarVisao('Pendentes',this)">
+        <i class="bi bi-hourglass-split"></i> <span class="nav-label">Pendentes</span>
+        <span class="nav-badge amber" id="nb-pendentes">0</span>
+    </a>
+    <a class="nav-item" data-filtro="Minha Fila" onclick="trocarVisao('Minha Fila',this)">
+        <i class="bi bi-person-fill-check"></i> <span class="nav-label">Minha Fila</span>
+        <span class="nav-badge" id="nb-minha">0</span>
+    </a>
+    <a class="nav-item" data-filtro="Concluído" onclick="trocarVisao('Concluído',this)">
+        <i class="bi bi-check-circle-fill"></i> <span class="nav-label">Histórico</span>
+        <span class="nav-badge verde" id="nb-concluidos">0</span>
+    </a>
+    <hr class="sidebar-divider">
+    <div class="sidebar-section-label">Usuários</div>
+    <a class="nav-item" data-filtro="Cadastros" onclick="trocarVisao('Cadastros',this)">
+        <i class="bi bi-person-check"></i> <span class="nav-label">Cadastros</span>
+        <span class="nav-badge amber" id="nb-cadastros">0</span>
+    </a>
+    <hr class="sidebar-divider">
+    <div class="sidebar-section-label">Filtros</div>
+    <div class="filtros-block" style="padding:4px 10px 8px;">
+        <label style="font-size:.71rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:5px;">Filtrar por data</label>
+        <input type="date" id="filtroData" class="adm-input" style="width:100%;">
+    </div>
+    <div class="sidebar-footer">
+        <i class="bi bi-clock"></i>
+        <span id="relogioSidebar">--:--</span>
+        &nbsp;·&nbsp;
+        <span id="dataHoje" style="font-size:.68rem;"></span>
+    </div>
+    <div class="sidebar-actions" style="padding:10px 10px 4px;display:flex;flex-direction:column;gap:6px;">
+        <span id="tecLabel" style="font-size:.72rem;font-weight:600;color:var(--text-muted);padding:0 2px;"></span>
+        <div style="display:flex;gap:6px;">
+            <button id="btnPDF" class="adm-btn" style="flex:1;justify-content:center;font-size:.73rem;"><i class="bi bi-file-earmark-pdf"></i> PDF</button>
+            <button id="themeToggle" class="icon-btn" title="Alternar tema"><i class="bi bi-moon-stars"></i></button>
+        </div>
+        <button onclick="verComoUsuario()" class="adm-btn" style="width:100%;justify-content:center;"><i class="bi bi-person-badge"></i> Ver como usuário</button>
+        <button onclick="sair()" class="adm-btn adm-btn-danger" style="width:100%;justify-content:center;"><i class="bi bi-box-arrow-right"></i> Sair</button>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main-wrap">
+<div class="main-inner">
+
+    <!-- ===== DASHBOARD VIEW ===== -->
+    <div id="viewDashboard">
+        <div class="section-head" style="margin-bottom:18px;">
+            <div class="section-title"><i class="bi bi-grid-1x2-fill"></i> Dashboard</div>
+            <span id="dashSubtitle" style="font-size:.72rem;color:var(--text-soft);">Atualizado em tempo real</span>
+        </div>
+
+        <!-- Linha 1: 4 cards de métricas -->
+        <div class="dash-row">
+            <div class="dash-card dc-red" onclick="trocarVisao('Abertos',document.querySelector('[data-filtro=Abertos]'))">
+                <div class="dash-card-accent"></div>
+                <div class="dash-icon"><i class="bi bi-stars"></i></div>
+                <div class="dash-label">Novos chamados</div>
+                <div class="dash-value" id="dc-abertos">0</div>
+                <div class="dash-sub">Aguardando técnico</div>
+                <span class="dash-trend"><i class="bi bi-arrow-right-circle-fill"></i> Capturar</span>
+            </div>
+            <div class="dash-card dc-amber" onclick="trocarVisao('Pendentes',document.querySelector('[data-filtro=Pendentes]'))">
+                <div class="dash-card-accent"></div>
+                <div class="dash-icon"><i class="bi bi-hourglass-split"></i></div>
+                <div class="dash-label">Pendentes</div>
+                <div class="dash-value" id="dc-pendentes">0</div>
+                <div class="dash-sub">Em andamento</div>
+                <span class="dash-trend"><i class="bi bi-clock-fill"></i> Ver todos</span>
+            </div>
+            <div class="dash-card dc-blue" onclick="trocarVisao('Minha Fila',document.querySelector('[data-filtro=\'Minha Fila\']'))">
+                <div class="dash-card-accent"></div>
+                <div class="dash-icon"><i class="bi bi-person-fill-check"></i></div>
+                <div class="dash-label">Minha Fila</div>
+                <div class="dash-value" id="dc-minha">0</div>
+                <div class="dash-sub">Atribuídos a você</div>
+                <span class="dash-trend"><i class="bi bi-person-fill"></i> Meus chamados</span>
+            </div>
+            <div class="dash-card dc-green" onclick="trocarVisao('Concluído',document.querySelector('[data-filtro=Concluído]'))">
+                <div class="dash-card-accent"></div>
+                <div class="dash-icon"><i class="bi bi-check-circle-fill"></i></div>
+                <div class="dash-label">Concluídos</div>
+                <div class="dash-value" id="dc-concluidos">0</div>
+                <div class="dash-sub">Finalizados com sucesso</div>
+                <span class="dash-trend"><i class="bi bi-check2-all"></i> Ver histórico</span>
+            </div>
+        </div>
+
+        <!-- Linha 2: Gráfico rosca + Chamados novos urgentes -->
+        <div class="dash-bottom">
+
+            <!-- Gráfico de rosca -->
+            <div class="chart-card">
+                <div class="chart-card-title"><i class="bi bi-pie-chart-fill"></i> Distribuição</div>
+                <div class="donut-wrap">
+                    <canvas id="donutChart" role="img" aria-label="Gráfico de distribuição de chamados por status"></canvas>
+                    <div class="donut-center">
+                        <div class="donut-center-val" id="donut-total">0</div>
+                        <div class="donut-center-lbl">Total</div>
+                    </div>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item">
+                        <div class="legend-label"><div class="legend-dot" style="background:#ef4444"></div>Novos</div>
+                        <div class="legend-count" id="leg-abertos">0</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-label"><div class="legend-dot" style="background:#d97706"></div>Pendentes</div>
+                        <div class="legend-count" id="leg-pendentes">0</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-label"><div class="legend-dot" style="background:#0ea5e9"></div>Minha Fila</div>
+                        <div class="legend-count" id="leg-minha">0</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-label"><div class="legend-dot" style="background:#16a34a"></div>Concluídos</div>
+                        <div class="legend-count" id="leg-concluidos">0</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-label"><div class="legend-dot" style="background:#7c3aed"></div>Alta Urgência</div>
+                        <div class="legend-count" id="leg-alta">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chamados novos abertos -->
+            <div class="recentes-card">
+                <div class="recentes-header">
+                    <div class="recentes-title">
+                        <i class="bi bi-stars"></i>
+                        Novos chamados abertos
+                        <span class="pulse-dot" id="pulseDot" style="display:none;"></span>
+                    </div>
+                    <button class="adm-btn" onclick="trocarVisao('Abertos',document.querySelector('[data-filtro=Abertos]'))" style="font-size:.72rem;padding:5px 10px;">Ver todos <i class="bi bi-arrow-right"></i></button>
+                </div>
+                <div id="gridNovos" class="grid-chamados"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ===== CHAMADOS VIEW ===== -->
+    <div id="viewChamados" style="display:none;">
+        <div class="section-head">
+            <div class="section-title" id="viewTitle"><i class="bi bi-list-task"></i> Chamados</div>
+        </div>
+        <div id="gridChamados" class="grid-chamados"></div>
+    </div>
+
+    <!-- ===== CADASTROS VIEW ===== -->
+    <div id="viewCadastros" style="display:none;">
+        <div class="section-head">
+            <div class="section-title"><i class="bi bi-person-check"></i> Cadastros</div>
+        </div>
+        <div class="subtabs">
+            <button class="subtab-btn active" data-subtab="Perfis" onclick="window.trocarSubTabCadastros('Perfis',this)"><i class="bi bi-people-fill"></i> Perfis</button>
+            <button class="subtab-btn" data-subtab="Solicitacoes" onclick="window.trocarSubTabCadastros('Solicitacoes',this)"><i class="bi bi-bell-fill"></i> Solicitações <span class="nav-badge amber" id="nb-solicitacoes">0</span></button>
+        </div>
+        <div id="gridCadastros" class="grid-chamados"></div>
+        <div id="gridSolicitacoes" class="grid-chamados" style="display:none;"></div>
+    </div>
+
+    <!-- ===== PERFIL DO USUÁRIO VIEW ===== -->
+    <div id="viewPerfil" style="display:none;">
+        <div class="section-head">
+            <button class="adm-btn" onclick="window.voltarCadastros()" style="margin-bottom:10px;"><i class="bi bi-arrow-left"></i> Voltar para Cadastros</button>
+        </div>
+        <div id="perfilDados"></div>
+        <div class="section-head" style="margin-top:18px;">
+            <div class="section-title"><i class="bi bi-shield-lock"></i> Redefinição de senha</div>
+        </div>
+        <div id="perfilReset"></div>
+        <div class="section-head" style="margin-top:18px;">
+            <div class="section-title"><i class="bi bi-list-task"></i> Chamados do usuário</div>
+        </div>
+        <div id="gridPerfilChamados" class="grid-chamados"></div>
+        <div class="section-head" style="margin-top:24px;">
+            <button class="adm-btn adm-btn-danger" id="btnExcluirUsuario"><i class="bi bi-trash3"></i> Excluir usuário</button>
+        </div>
+    </div>
+
+</div>
+<footer class="app-footer">&copy; 2026 Prefeitura de Delta · Gestão em Tecnologia</footer>
+</div>
+
+<!-- Modal Finalizar -->
+<div id="modalFinalizar">
+    <h6 class="modal-title">Finalizar atendimento</h6>
+    <textarea id="solucaoTecnica" class="adm-textarea" placeholder="Descreva o que foi feito..." rows="3"></textarea>
+    <div class="modal-actions">
+        <button id="btnSalvarConclusao" class="act act-fim flex1">Finalizar</button>
+        <button onclick="document.getElementById('modalFinalizar').style.display='none'" class="act act-transf flex1">Voltar</button>
+    </div>
+</div>
+
+<!-- Modal Transferir -->
+<div id="modalTransferir">
+    <h6 class="modal-title">Transferir chamado</h6>
+    <p class="modal-sub">Selecione o novo responsável:</p>
+    <select id="selectNovoAdm" class="adm-select" style="width:100%;">
+        <option value="" disabled selected>Escolha um ADM...</option>
+        <option value="Lucas">Lucas</option>
+        <option value="Gustavo">Gustavo</option>
+        <option value="Jean">Jean</option>
+        <option value="Zequias">Zequias</option>
+        <option value="Ramon">Ramon</option>
+    </select>
+    <div class="modal-actions">
+        <button id="btnConfirmarTransferencia" class="act act-primary flex1">Confirmar</button>
+        <button onclick="document.getElementById('modalTransferir').style.display='none'" class="act act-transf flex1">Cancelar</button>
+    </div>
+</div>
+
+<!-- Tema -->
+<script>
+(function(){
+    const btn=document.getElementById('themeToggle');
+    function syncIcon(t){btn.querySelector('i').className=t==='dark'?'bi bi-sun':'bi bi-moon-stars';}
+    function apply(t){document.documentElement.setAttribute('data-theme',t);localStorage.setItem('theme',t);syncIcon(t);}
+    syncIcon(document.documentElement.getAttribute('data-theme'));
+    btn.addEventListener('click',()=>apply(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark'));
+})();
+/* Minimizar / expandir barra lateral */
+(function(){
+    const btn=document.getElementById('sidebarToggle');
+    function syncTitle(){btn.title=document.documentElement.classList.contains('sidebar-mini')?'Expandir menu':'Minimizar menu';}
+    syncTitle();
+    btn.addEventListener('click',()=>{
+        const on=document.documentElement.classList.toggle('sidebar-mini');
+        localStorage.setItem('sidebarMini',on?'1':'0');
+        syncTitle();
+    });
+})();
+function updateClock(){
+    const n=new Date();
+    document.getElementById('relogioSidebar').textContent=n.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('dataHoje').textContent=n.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+}
+updateClock();setInterval(updateClock,10000);
+</script>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import{getFirestore,collection,onSnapshot,query,orderBy,doc,updateDoc,serverTimestamp,getDoc,getDocs,setDoc,where,deleteDoc}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import{getAuth,onAuthStateChanged,signOut,sendPasswordResetEmail}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+const app=initializeApp({apiKey:"AIzaSyCpXcAHwayq8AN3VR7Sj7VYteAwSluKovo",authDomain:"sistema-chamados-c3e61.firebaseapp.com",projectId:"sistema-chamados-c3e61",storageBucket:"sistema-chamados-c3e61.firebasestorage.app",appId:"1:782902435377:web:937600794bd6b7c0397f10"});
+const db=getFirestore(app);
+const auth=getAuth(app);
+let tNome=null;                     // nome de exibição do técnico logado (definido após autenticar)
+let tUid=null;                      // uid do técnico logado (usado para "Ver como usuário")
+let idEmFoco="";let visaoAtual="Dashboard";let todosOsChamados=[];let usuariosTodos=[];let resetsPendentes=[];
+
+/* ===== PRESENÇA: técnicos online/offline ===== */
+const ONLINE_WINDOW=60000;          // considera online se visto nos últimos 60s
+const PALETA=['#0ea5e9','#16a34a','#d97706','#7c3aed','#dc2626','#4f46e5'];
+let rosterTecnicos=[];              // todos os técnicos (coleção "admins")
+let presencaMap={};                 // nome -> {online, lastSeen(ms)}
+let presRef=null;                   // definido em iniciarPainel (depende de tNome)
+
+async function marcarPresenca(online){
+    if(!presRef)return;
+    try{await setDoc(presRef,{nome:tNome,online,lastSeen:serverTimestamp()},{merge:true});console.log('[presenca] gravado',tNome,'online=',online);}catch(e){console.error('[presenca] FALHA ao gravar (regras do Firestore?)',e);}
+}
+
+function isOnline(nome){
+    const p=presencaMap[nome];
+    return !!p && p.online && (Date.now()-p.lastSeen)<ONLINE_WINDOW;
+}
+function corDe(nome){let h=0;for(let i=0;i<nome.length;i++)h=nome.charCodeAt(i)+((h<<5)-h);return PALETA[Math.abs(h)%PALETA.length];}
+
+function renderPresenca(){
+    const cont=document.getElementById('presenceBar');if(!cont)return;
+    const nomes=[...new Set(rosterTecnicos)].sort((a,b)=>{
+        const oa=isOnline(a),ob=isOnline(b);
+        if(oa!==ob)return oa?-1:1;       // online primeiro
+        return a.localeCompare(b);
+    });
+    cont.innerHTML=nomes.map(n=>{
+        const on=isOnline(n);
+        const ini=(n.trim()[0]||'?').toUpperCase();
+        const eu=n===tNome;
+        const cor=corDe(n);
+        const styleOn=on?`background:${cor}22;color:${cor};border-color:${cor}66;`:'';
+        return `<div class="presence-item ${on?'on':'off'}" title="${n}${eu?' (você)':''} — ${on?'online':'offline'}">
+            <div class="presence-avatar ${eu?'me':''}" style="${styleOn}">${ini}
+                <span class="presence-dot ${on?'online':''}"></span>
+            </div>
+            <span class="presence-name">${n}</span>
+        </div>`;
+    }).join('');
+}
+// Reavalia o "frescor" periodicamente para derrubar quem fechou a página
+setInterval(renderPresenca,20000);
+
+// Gráfico rosca
+let donutChart=null;
+function initDonut(){
+    const ctx=document.getElementById('donutChart').getContext('2d');
+    const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+    donutChart=new Chart(ctx,{type:'doughnut',data:{labels:['Novos','Pendentes','Minha Fila','Concluídos','Alta Urg.'],datasets:[{data:[0,0,0,0,0],backgroundColor:['#ef4444','#d97706','#0ea5e9','#16a34a','#7c3aed'],borderWidth:isDark?2:3,borderColor:isDark?'#15181f':'#ffffff',hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+c.parsed;}}}}}});
+}
+initDonut();
+
+function atualizarDonut(abertos,pendentes,minha,concluidos,alta){
+    if(!donutChart)return;
+    donutChart.data.datasets[0].data=[abertos,pendentes,minha,concluidos,alta];
+    donutChart.update();
+    const total=abertos+pendentes+concluidos+alta;
+    document.getElementById('donut-total').textContent=total;
+    document.getElementById('leg-abertos').textContent=abertos;
+    document.getElementById('leg-pendentes').textContent=pendentes;
+    document.getElementById('leg-minha').textContent=minha;
+    document.getElementById('leg-concluidos').textContent=concluidos;
+    document.getElementById('leg-alta').textContent=alta;
+}
+
+window.sair=async()=>{await marcarPresenca(false);localStorage.removeItem('tecnicoAtivo');localStorage.removeItem('sessaoAtiva');await signOut(auth);window.location.href='index.html';};
+
+window.trocarVisao=(filtro,el)=>{
+    visaoAtual=filtro;
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    if(el) el.classList.add('active');
+    else { const nav=document.querySelector(`[data-filtro="${filtro}"]`); if(nav) nav.classList.add('active'); }
+    const vD=document.getElementById('viewDashboard'),vC=document.getElementById('viewChamados'),vU=document.getElementById('viewCadastros'),vP=document.getElementById('viewPerfil');
+    vD.style.display='none';vC.style.display='none';vU.style.display='none';vP.style.display='none';
+    if(filtro==='Dashboard'){
+        vD.style.display='';
+        renderNovos();
+    }else if(filtro==='Cadastros'){
+        vU.style.display='';
+        renderCadastros();
+        renderSolicitacoes();
+    }else{
+        vC.style.display='';
+        const icons={Pendentes:'bi-hourglass-split','Minha Fila':'bi-person-fill-check',Abertos:'bi-stars','Concluído':'bi-check-circle-fill'};
+        const labels={Pendentes:'Pendentes','Minha Fila':'Minha Fila',Abertos:'Novos / Sem técnico','Concluído':'Histórico'};
+        document.getElementById('viewTitle').innerHTML=`<i class="bi ${icons[filtro]||'bi-list-task'}"></i> ${labels[filtro]||filtro}`;
+        renderChamados(filtro);
+    }
+};
+
+function buildCardHtml(c,id){
+    const dt=c.dataCriacao?.toDate();
+    const msgs=c.mensagens||[];
+    const nLidas=msgs.filter(m=>m.autor!==tNome&&m.autor!=="Sistema"&&!m.lido).length;
+    const urgKey={'Alta':'alta','Média':'media','Baixa':'baixa'}[c.urgencia]||'baixa';
+    const concluido=c.status==='Concluído';
+    const resp=c.tecnicoResponsavel;
+    const pillClass=concluido?'ok':(resp?'':'pendente');
+    const pillIcon=concluido?'bi-check-circle-fill':(resp?'bi-person-fill':'bi-hourglass-split');
+    const pillText=concluido?'Concluído':(resp||'Pendente');
+    const rastroCard=(c.tecnicoOriginal&&c.tecnicoOriginal!==c.tecnicoResponsavel)?`<div class="rastro-line"><i class="bi bi-arrow-repeat"></i> Iniciado por ${c.tecnicoOriginal}</div>`:'';
+    return `<div class="card-chamado" onclick="window.toggleCard(this)">
+        <div class="sla-bar bg-urg-${urgKey}"></div>
+        <div class="card-summary">
+            <div class="card-head-row"><div class="card-titulo">${c.titulo}</div><span class="urg-chip ${urgKey}">${c.urgencia||'—'}</span></div>
+            <div class="card-meta">
+                <div><i class="bi bi-person-fill"></i> <b>${c.nome} ${c.sobrenome}</b></div>
+                <div class="muted"><i class="bi bi-building"></i> ${c.departamento}</div>
+            </div>
+            <div class="card-foot">
+                <div class="card-foot-left">
+                    <span class="resp-pill ${pillClass}"><i class="bi ${pillIcon}"></i> ${pillText}</span>
+                    ${nLidas>0?`<span class="notif-chip"><i class="bi bi-chat-dots-fill"></i> ${nLidas}</span>`:''}
+                </div>
+                <div class="card-foot-right">
+                    <span class="card-date">${dt?dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''}</span>
+                    <i class="bi bi-chevron-down expand-ico"></i>
+                </div>
+            </div>
+        </div>
+        <div class="card-details">
+            <div class="desc-box">${c.descricao}</div>
+            <div class="chat-box">${msgs.map(m=>`<div class="${m.autor===tNome?'msg-tec':'msg-user'}"><b>${m.autor}:</b> ${m.texto}<br><small class="msg-data">${m.data||''}</small></div>`).join('')}</div>
+            ${rastroCard}
+            <div class="card-actions">
+                ${!resp?`<button class="act act-primary" onclick="event.stopPropagation();window.capturar('${id}')">Capturar chamado</button>`
+                    :(resp===tNome&&!concluido?`<div class="act-row"><button onclick="event.stopPropagation();window.enviarMsg('${id}',${JSON.stringify(msgs).replace(/"/g,'&quot;')})" class="act act-msg">Mensagem</button><button class="act act-fim" onclick="event.stopPropagation();window.abrirModalFinalizar('${id}')">Finalizar</button></div><button class="act act-transf" onclick="event.stopPropagation();window.abrirModalTransferir('${id}')">Transferir</button>`:'')}
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderNovos(){
+    const grid=document.getElementById('gridNovos');
+    const novos=todosOsChamados.filter(({c})=>!c.tecnicoResponsavel).slice(0,6);
+    document.getElementById('pulseDot').style.display=novos.length>0?'inline-block':'none';
+    grid.innerHTML=novos.length?novos.map(({c,id})=>buildCardHtml(c,id)).join(''):
+        `<div class="empty-state"><i class="bi bi-check2-all"></i><p>Nenhum chamado aguardando técnico.</p></div>`;
+}
+
+function renderChamados(filtro){
+    const grid=document.getElementById('gridChamados');
+    const dataFiltro=document.getElementById('filtroData').value;
+    let lista=todosOsChamados.filter(({c})=>{
+        const dt=c.dataCriacao?.toDate();
+        let dtF=dt?`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`:"";
+        let exibir=(filtro==="Pendentes"&&c.status!=="Concluído")||(filtro==="Minha Fila"&&c.tecnicoResponsavel===tNome)||(filtro==="Abertos"&&!c.tecnicoResponsavel)||(filtro==="Concluído"&&c.status==="Concluído");
+        if(dataFiltro&&dtF!==dataFiltro)exibir=false;
+        return exibir;
+    });
+    grid.innerHTML=lista.length?lista.map(({c,id})=>buildCardHtml(c,id)).join(''):
+        `<div class="empty-state"><i class="bi bi-inbox"></i><p>Nenhum chamado encontrado.</p></div>`;
+}
+
+function assinarChamados(){
+onSnapshot(query(collection(db,"chamados"),orderBy("dataCriacao","desc")),snapshot=>{
+    todosOsChamados=snapshot.docs.map(d=>({id:d.id,c:d.data()}));
+    const abertos   = todosOsChamados.filter(({c})=>!c.tecnicoResponsavel && c.status!=="Concluído").length;
+    const pendentes  = todosOsChamados.filter(({c})=>c.status!=="Concluído").length;
+    const minha      = todosOsChamados.filter(({c})=>c.tecnicoResponsavel===tNome).length;
+    const concluidos = todosOsChamados.filter(({c})=>c.status==="Concluído").length;
+    const alta       = todosOsChamados.filter(({c})=>c.urgencia==="Alta" && c.status!=="Concluído").length;
+
+    const agora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const sub=document.getElementById('dashSubtitle');if(sub)sub.textContent='Última atualização: '+agora;
+    document.getElementById('dc-abertos').textContent=abertos;
+    document.getElementById('dc-pendentes').textContent=pendentes;
+    document.getElementById('dc-minha').textContent=minha;
+    document.getElementById('dc-concluidos').textContent=concluidos;
+    document.getElementById('nb-abertos').textContent=abertos;
+    document.getElementById('nb-pendentes').textContent=pendentes;
+    document.getElementById('nb-minha').textContent=minha;
+    document.getElementById('nb-concluidos').textContent=concluidos;
+
+    atualizarDonut(abertos,pendentes,minha,concluidos,alta);
+    if(visaoAtual==='Dashboard')renderNovos();
+    else if(visaoAtual==='Perfil'){if(idEmFoco)window.abrirPerfilUsuario(idEmFoco);}
+    else renderChamados(visaoAtual);
+});
+}
+
+// ===== CADASTROS (perfis dos usuários + aprovação de solicitantes) =====
+const esc=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function statusBadge(status){
+    if(status==='aprovado')return'<span class="urg-chip baixa">Aprovado</span>';
+    if(status==='rejeitado')return'<span class="urg-chip alta">Rejeitado</span>';
+    return'<span class="urg-chip media">Pendente</span>';
+}
+
+function renderCadastros(){
+    const grid=document.getElementById('gridCadastros');if(!grid)return;
+    grid.innerHTML=usuariosTodos.length?usuariosTodos.map(({id,u})=>{
+        const temReset=resetsPendentes.some(r=>r.r.email===u.email);
+        return `<div class="card-chamado" onclick="window.abrirPerfilUsuario('${id}')" style="cursor:pointer;">
+            <div class="card-summary">
+                <div class="card-head-row"><div class="card-titulo">${esc(u.nome)} ${esc(u.sobrenome)}</div>${statusBadge(u.status)}</div>
+                <div class="card-meta">
+                    <div><i class="bi bi-envelope"></i> ${esc(u.email)}</div>
+                    <div class="muted"><i class="bi bi-telephone"></i> ${esc(u.telefone)}</div>
+                    <div class="muted"><i class="bi bi-building"></i> ${esc(u.setor)}</div>
+                    <div class="muted"><i class="bi bi-person-badge"></i> ${esc(u.cargo)}</div>
+                    ${temReset?'<div><span class="urg-chip alta"><i class="bi bi-key-fill"></i> Pediu redefinição de senha</span></div>':''}
+                </div>
+            </div>
+        </div>`;
+    }).join(''):
+        `<div class="empty-state"><i class="bi bi-person-check"></i><p>Nenhum cadastro encontrado.</p></div>`;
+}
+
+function renderSolicitacoes(){
+    const grid=document.getElementById('gridSolicitacoes');if(!grid)return;
+    const cadastrosPendentes=usuariosTodos.filter(({u})=>u.status==='pendente');
+    const cardsCadastro=cadastrosPendentes.map(({id,u})=>`
+        <div class="card-chamado">
+            <div class="card-summary">
+                <div class="card-head-row"><div class="card-titulo"><i class="bi bi-person-plus"></i> ${esc(u.nome)} ${esc(u.sobrenome)}</div>${statusBadge('pendente')}</div>
+                <div class="card-meta">
+                    <div><i class="bi bi-envelope"></i> ${esc(u.email)}</div>
+                    <div class="muted"><i class="bi bi-telephone"></i> ${esc(u.telefone)}</div>
+                    <div class="muted"><i class="bi bi-building"></i> ${esc(u.setor)}</div>
+                    <div class="muted"><i class="bi bi-person-badge"></i> ${esc(u.cargo)}</div>
+                </div>
+                <div class="card-actions"><div class="act-row">
+                    <button class="act act-primary" onclick="window.aprovarCadastro('${id}')">Aprovar</button>
+                    <button class="act act-transf" onclick="window.rejeitarCadastro('${id}')">Rejeitar</button>
+                </div></div>
+            </div>
+        </div>`).join('');
+    const cardsReset=resetsPendentes.map(({id,r})=>`
+        <div class="card-chamado">
+            <div class="card-summary">
+                <div class="card-head-row"><div class="card-titulo"><i class="bi bi-key-fill"></i> Redefinir senha</div>${statusBadge('pendente')}</div>
+                <div class="card-meta">
+                    <div><i class="bi bi-envelope"></i> ${esc(r.email)}</div>
+                    <div class="muted">Solicitado em: ${r.dataSolicitacao?.toDate?.().toLocaleString('pt-BR')||'—'}</div>
+                </div>
+                <div class="card-actions"><div class="act-row">
+                    <button class="act act-primary" onclick="window.aprovarReset('${id}','${esc(r.email)}')">Aprovar e enviar e-mail</button>
+                </div></div>
+            </div>
+        </div>`).join('');
+    const html=cardsCadastro+cardsReset;
+    grid.innerHTML=html||`<div class="empty-state"><i class="bi bi-check2-all"></i><p>Nenhuma solicitação pendente.</p></div>`;
+}
+
+function atualizarBadgeSolicitacoes(){
+    const total=usuariosTodos.filter(({u})=>u.status==='pendente').length+resetsPendentes.length;
+    const b1=document.getElementById('nb-cadastros');if(b1)b1.textContent=total;
+    const b2=document.getElementById('nb-solicitacoes');if(b2)b2.textContent=total;
+}
+
+window.trocarSubTabCadastros=(sub,el)=>{
+    document.querySelectorAll('.subtab-btn').forEach(b=>b.classList.remove('active'));
+    if(el)el.classList.add('active');
+    const gP=document.getElementById('gridCadastros'),gS=document.getElementById('gridSolicitacoes');
+    if(sub==='Perfis'){gP.style.display='';gS.style.display='none';renderCadastros();}
+    else{gP.style.display='none';gS.style.display='';renderSolicitacoes();}
+};
+
+function assinarCadastros(){
+    onSnapshot(collection(db,'usuarios'),snap=>{
+        usuariosTodos=snap.docs.map(d=>({id:d.id,u:d.data()}));
+        atualizarBadgeSolicitacoes();
+        if(visaoAtual==='Cadastros'){renderCadastros();renderSolicitacoes();}
+    },err=>console.error('[cadastros] FALHA ao ler (regras do Firestore?)',err));
+}
+
+window.aprovarCadastro=async(uid)=>{
+    if(!confirm('Aprovar este cadastro? O solicitante poderá entrar e abrir chamados.'))return;
+    try{await updateDoc(doc(db,'usuarios',uid),{status:'aprovado'});}
+    catch(e){console.error('[cadastros] falha ao aprovar',e);alert('Não foi possível aprovar (verifique as regras do Firestore).');}
+};
+window.rejeitarCadastro=async(uid)=>{
+    if(!confirm('Rejeitar este cadastro? O solicitante não conseguirá entrar.'))return;
+    try{await updateDoc(doc(db,'usuarios',uid),{status:'rejeitado'});}
+    catch(e){console.error('[cadastros] falha ao rejeitar',e);alert('Não foi possível rejeitar (verifique as regras do Firestore).');}
+};
+
+// ===== Solicitações de redefinição de senha =====
+function assinarResetSenha(){
+    onSnapshot(query(collection(db,'resetSenha'),where('status','==','pendente')),snap=>{
+        resetsPendentes=snap.docs.map(d=>({id:d.id,r:d.data()}));
+        atualizarBadgeSolicitacoes();
+        if(visaoAtual==='Cadastros'){renderCadastros();renderSolicitacoes();}
+        if(visaoAtual==='Perfil'&&idEmFoco)renderPerfilReset(idEmFoco);
+    },err=>console.error('[reset-senha] FALHA ao ler (regras do Firestore?)',err));
+}
+
+window.aprovarReset=async(resetId,email)=>{
+    if(!confirm(`Confirma que já validou a identidade de ${email} por contato direto? Isso vai enviar o e-mail oficial de redefinição de senha do Firebase para essa pessoa.`))return;
+    try{
+        await sendPasswordResetEmail(auth,email);
+        await updateDoc(doc(db,'resetSenha',resetId),{status:'aprovado',dataAprovacao:serverTimestamp()});
+        alert('E-mail de redefinição enviado para '+email+'.');
+    }catch(e){
+        console.error('[reset-senha] falha ao aprovar',e);
+        alert('Não foi possível enviar o e-mail de redefinição.');
+    }
+};
+
+// ===== Perfil do usuário (dados + chamados + reset de senha) =====
+function renderPerfilReset(uid){
+    const perfil=usuariosTodos.find(x=>x.id===uid);if(!perfil)return;
+    const cont=document.getElementById('perfilReset');if(!cont)return;
+    const pedido=resetsPendentes.find(r=>r.r.email===perfil.u.email);
+    cont.innerHTML=pedido?`<div class="card-chamado">
+        <div class="card-summary">
+            <div class="card-head-row"><div class="card-titulo"><i class="bi bi-key-fill"></i> Solicitação pendente</div>${statusBadge('pendente')}</div>
+            <div class="card-meta"><div class="muted">Solicitado em: ${pedido.r.dataSolicitacao?.toDate?.().toLocaleString('pt-BR')||'—'}</div></div>
+            <div class="card-actions"><div class="act-row">
+                <button class="act act-primary" onclick="window.aprovarReset('${pedido.id}','${esc(perfil.u.email)}')">Aprovar e enviar e-mail</button>
+            </div></div>
+        </div>
+    </div>`:`<div class="empty-state"><i class="bi bi-shield-check"></i><p>Nenhuma solicitação de redefinição de senha pendente.</p></div>`;
+}
+
+window.abrirPerfilUsuario=(uid)=>{
+    idEmFoco=uid;
+    visaoAtual='Perfil';
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('viewDashboard').style.display='none';
+    document.getElementById('viewChamados').style.display='none';
+    document.getElementById('viewCadastros').style.display='none';
+    document.getElementById('viewPerfil').style.display='';
+
+    const perfil=usuariosTodos.find(x=>x.id===uid);if(!perfil)return;
+    const u=perfil.u;
+    document.getElementById('perfilDados').innerHTML=`<div class="card-chamado">
+        <div class="card-summary">
+            <div class="card-head-row"><div class="card-titulo">${esc(u.nome)} ${esc(u.sobrenome)}</div>${statusBadge(u.status)}</div>
+            <div class="card-meta">
+                <div><i class="bi bi-envelope"></i> ${esc(u.email)}</div>
+                <div class="muted"><i class="bi bi-telephone"></i> ${esc(u.telefone)||'—'}</div>
+                <div class="muted"><i class="bi bi-building"></i> ${esc(u.setor)||'—'}</div>
+                <div class="muted"><i class="bi bi-person-badge"></i> ${esc(u.cargo)||'—'}</div>
+            </div>
+        </div>
+    </div>`;
+
+    renderPerfilReset(uid);
+
+    const chamadosDoUsuario=todosOsChamados.filter(({c})=>c.ownerUid===uid);
+    const gridPerfil=document.getElementById('gridPerfilChamados');
+    gridPerfil.innerHTML=chamadosDoUsuario.length?chamadosDoUsuario.map(({c,id})=>buildCardHtml(c,id)).join(''):
+        `<div class="empty-state"><i class="bi bi-inbox"></i><p>Este usuário ainda não abriu chamados.</p></div>`;
+
+    document.getElementById('btnExcluirUsuario').onclick=()=>window.excluirUsuario(uid,`${u.nome} ${u.sobrenome}`);
+};
+
+window.excluirUsuario=async(uid,nomeCompleto)=>{
+    if(!confirm(`Excluir o usuário ${nomeCompleto}? Ele perde o acesso ao sistema imediatamente. Os chamados que já abriu continuam no histórico — isso NÃO remove o login dele do Firebase Authentication, só o cadastro/perfil.`))return;
+    try{
+        await deleteDoc(doc(db,'usuarios',uid));
+        alert('Usuário excluído.');
+        window.voltarCadastros();
+    }catch(e){
+        console.error('[cadastros] falha ao excluir usuário',e);
+        alert('Não foi possível excluir (verifique as regras do Firestore).');
+    }
+};
+
+window.voltarCadastros=()=>{
+    idEmFoco='';
+    trocarVisao('Cadastros',document.querySelector('[data-filtro="Cadastros"]'));
+};
+
+window.toggleCard=(card)=>card.classList.toggle('expandido');
+window.capturar=async(id)=>{
+    if(confirm("Capturar chamado?")){
+        const docRef=doc(db,"chamados",id);const snap=await getDoc(docRef);const dados=snap.data();
+        const rastro={status:"Em Atendimento",tecnicoResponsavel:tNome};
+        if(!dados.tecnicoOriginal)rastro.tecnicoOriginal=tNome;
+        await updateDoc(docRef,rastro);
+    }
+};
+window.enviarMsg=async(id,msgsAtuais)=>{
+    const msg=prompt("Sua resposta:");
+    if(msg){const agora=new Date().toLocaleString('pt-BR');const novas=(msgsAtuais||[]).map(m=>({...m,lido:true}));novas.push({autor:tNome,texto:msg,data:agora,lido:false});await updateDoc(doc(db,"chamados",id),{mensagens:novas});}
+};
+window.abrirModalTransferir=(id)=>{idEmFoco=id;document.getElementById('selectNovoAdm').value="";document.getElementById('modalTransferir').style.display='block';};
+document.getElementById('btnConfirmarTransferencia').onclick=async()=>{
+    const novo=document.getElementById('selectNovoAdm').value;if(!novo)return alert("Selecione um técnico!");
+    const r=doc(db,"chamados",idEmFoco);const sn=await getDoc(r);const ms=sn.data().mensagens||[];
+    const agora=new Date().toLocaleString('pt-BR');
+    ms.push({autor:"Sistema",texto:`🔄 TRANSFERIDO: De ${tNome} para ${novo}`,data:agora,lido:false});
+    await updateDoc(r,{tecnicoResponsavel:novo,mensagens:ms});
+    document.getElementById('modalTransferir').style.display='none';alert("Transferido com sucesso!");
+};
+window.abrirModalFinalizar=(id)=>{idEmFoco=id;document.getElementById('modalFinalizar').style.display='block';};
+document.getElementById('btnSalvarConclusao').onclick=async()=>{
+    const sol=document.getElementById('solucaoTecnica').value.trim();if(!sol)return alert("Descreva a solução!");
+    const docRef=doc(db,"chamados",idEmFoco);const snap=await getDoc(docRef);
+    const novasMsgs=(snap.data().mensagens||[]).map(m=>({...m,lido:true}));
+    const agora=new Date().toLocaleString('pt-BR');
+    novasMsgs.push({autor:"Sistema",texto:`✅ FINALIZADO EM ${agora}: ${sol}`,data:agora,lido:false});
+    await updateDoc(docRef,{status:"Concluído",solucao:sol,dataFinalizacao:serverTimestamp(),mensagens:novasMsgs});
+    document.getElementById('modalFinalizar').style.display='none';document.getElementById('solucaoTecnica').value="";
+};
+document.getElementById('filtroData').onchange=()=>{if(visaoAtual!=='Dashboard')renderChamados(visaoAtual);};
+
+async function carregarLogo(url){return new Promise(resolve=>{const img=new Image();img.crossOrigin='Anonymous';img.onload=()=>{const canvas=document.createElement('canvas');canvas.width=img.width;canvas.height=img.height;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0);resolve(canvas.toDataURL('image/png'));};img.onerror=()=>resolve(null);img.src=url;});}
+document.getElementById('btnPDF').onclick=async()=>{
+    const btn=document.getElementById('btnPDF');btn.disabled=true;btn.innerText="GERANDO...";
+    try{
+        const{jsPDF}=window.jspdf;const docPDF=new jsPDF('l','mm','a4');
+        const logoBase64=await carregarLogo('logo.png.jpeg');
+        if(logoBase64)docPDF.addImage(logoBase64,'JPEG',14,5,40,15);
+        docPDF.setFontSize(16);docPDF.text("Relatório de Chamados Delta Cyber Security",60,15);
+        docPDF.setFontSize(10);docPDF.text("Extraído em: "+new Date().toLocaleString('pt-BR'),60,22);
+        const q=query(collection(db,"chamados"),where("status","==","Concluído"),orderBy("dataCriacao","asc"));
+        const snap=await getDocs(q);
+        const rows=snap.docs.map(d=>{const c=d.data();const historico=(c.mensagens||[]).map(m=>`[${m.data||'---'}] ${m.autor}: ${m.texto}`).join('\n');const rastro=(c.tecnicoOriginal&&c.tecnicoOriginal!==c.tecnicoResponsavel)?`${c.tecnicoOriginal} -> ${c.tecnicoResponsavel}`:(c.tecnicoResponsavel||'---');return[c.dataCriacao?.toDate().toLocaleString('pt-BR')||'---',c.dataFinalizacao?.toDate().toLocaleString('pt-BR')||'---',`${c.nome} ${c.sobrenome}`,c.departamento,c.titulo,c.descricao||'Sem descrição',rastro,historico];});
+        docPDF.autoTable({startY:28,head:[['Abertura','Finalização','Usuário','Setor','Assunto','Descrição','Técnico','Interações']],body:rows,styles:{fontSize:7,cellPadding:2},headStyles:{fillColor:[26,188,156]},columnStyles:{5:{cellWidth:45},7:{cellWidth:50}}});
+        docPDF.save(`Relatorio_Delta_${Date.now()}.pdf`);
+    }catch(e){alert("Erro ao gerar PDF.");}finally{btn.disabled=false;btn.innerText="Relatório PDF";}
+};
+
+/* ===== Inicialização do painel: só roda depois de confirmar o técnico autenticado ===== */
+function iniciarPainel(){
+    document.getElementById('tecLabel').innerText="OP: "+tNome;
+
+    // Presença: marca online e mantém o "batimento"
+    presRef=doc(db,'presenca',tNome);
+    marcarPresenca(true);
+    setInterval(()=>marcarPresenca(!document.hidden),25000);
+    document.addEventListener('visibilitychange',()=>marcarPresenca(!document.hidden));
+    window.addEventListener('pagehide',()=>marcarPresenca(false));
+    window.addEventListener('beforeunload',()=>marcarPresenca(false));
+
+    // Lista completa de técnicos (fonte da verdade agora é a coleção 'admins')
+    getDocs(collection(db,'admins')).then(s=>{
+        rosterTecnicos=s.docs.map(d=>d.data().nome).filter(Boolean);
+        if(!rosterTecnicos.includes(tNome))rosterTecnicos.push(tNome);
+        renderPresenca();
+    }).catch(()=>{rosterTecnicos=[tNome];renderPresenca();});
+
+    // Presença em tempo real
+    onSnapshot(collection(db,'presenca'),snap=>{
+        presencaMap={};
+        snap.docs.forEach(d=>{const v=d.data();presencaMap[d.id]={online:v.online===true,lastSeen:v.lastSeen?.toMillis?.()||0};});
+        renderPresenca();
+    },err=>console.error('[presenca] FALHA ao ler (regras do Firestore?)',err));
+
+    // Chamados em tempo real
+    assinarChamados();
+
+    // Cadastros de solicitantes aguardando aprovação
+    assinarCadastros();
+
+    // Solicitações de redefinição de senha
+    assinarResetSenha();
+
+    // Tela inicial é sempre o Dashboard
+    window.trocarVisao('Dashboard', document.querySelector('[data-filtro="Dashboard"]'));
+}
+
+// Ver como usuário: técnico também pode abrir chamados como solicitante.
+// Se ele ainda não tem um perfil em 'usuarios', cria um já aprovado (é staff,
+// não precisa de aprovação) e manda para o painel do solicitante.
+window.verComoUsuario=async()=>{
+    try{
+        const snap=await getDoc(doc(db,'usuarios',tUid));
+        if(!snap.exists()){
+            const ok=confirm('Você ainda não tem um perfil de usuário. Criar um agora com seus dados de técnico para poder abrir chamados como solicitante?');
+            if(!ok)return;
+            await setDoc(doc(db,'usuarios',tUid),{
+                nome:tNome,sobrenome:'',telefone:'',setor:'',cargo:'Técnico de TI',
+                email:auth.currentUser.email,status:'aprovado',dataCadastro:serverTimestamp()
+            });
+        }
+        window.location.href='painel.html';
+    }catch(e){
+        console.error('[admin] falha ao ativar visão de usuário',e);
+        alert('Não foi possível abrir o painel de usuário.');
+    }
+};
+
+// Gate de autenticação: exige usuário logado E presente em 'admins'
+onAuthStateChanged(auth, async (user)=>{
+    if(!user){window.location.replace('index.html');return;}
+    try{
+        const adminSnap=await getDoc(doc(db,'admins',user.uid));
+        if(!adminSnap.exists()){await signOut(auth);window.location.replace('index.html');return;}
+        tNome=adminSnap.data().nome||user.email;
+        tUid=user.uid;
+        iniciarPainel();
+    }catch(e){
+        console.error('[auth] falha ao verificar técnico',e);
+        window.location.replace('index.html');
+    }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar cadastro · Prefeitura de Delta</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Aplica o tema antes da pintura para evitar "flash" -->
+    <script>
+        (function () {
+            var t = localStorage.getItem('theme');
+            if (!t) {
+                t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            }
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
+    <style>
+        /* ===== Design tokens (mesmo sistema do index.html) ===== */
+        :root {
+            --accent: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-soft: rgba(79, 70, 229, 0.10);
+            --accent-ring: rgba(79, 70, 229, 0.20);
+
+            --bg-1: #fbfbfd;
+            --bg-2: #eef1f6;
+            --surface: #ffffff;
+            --surface-2: #f6f7f9;
+            --border: #e6e8ec;
+            --border-strong: #d6d9df;
+            --text: #14171f;
+            --text-muted: #6b7280;
+            --text-soft: #9aa1ac;
+
+            --green: #16a34a;
+            --green-soft: rgba(22, 163, 74, 0.10);
+            --red: #dc2626;
+            --red-soft: rgba(220, 38, 38, 0.10);
+
+            --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 40px rgba(16, 24, 40, 0.08);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        html[data-theme="dark"] {
+            --accent: #6366f1;
+            --accent-hover: #818cf8;
+            --accent-soft: rgba(99, 102, 241, 0.16);
+            --accent-ring: rgba(99, 102, 241, 0.30);
+
+            --bg-1: #0a0c10;
+            --bg-2: #11141b;
+            --surface: #15181f;
+            --surface-2: #1b1f27;
+            --border: #262b34;
+            --border-strong: #333945;
+            --text: #f1f3f6;
+            --text-muted: #99a1ad;
+            --text-soft: #6b7280;
+
+            --green: #34d399;
+            --green-soft: rgba(52, 211, 153, 0.14);
+            --red: #f87171;
+            --red-soft: rgba(248, 113, 113, 0.14);
+
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 50px rgba(0, 0, 0, 0.55);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            background:
+                radial-gradient(1200px 600px at 85% -10%, var(--accent-soft), transparent 60%),
+                linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+            background-attachment: fixed;
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 24px 16px;
+            transition: background-color .3s ease, color .3s ease;
+        }
+
+        .card-app {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 560px;
+            padding: 26px;
+            box-shadow: var(--shadow);
+        }
+
+        .app-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand-mark {
+            width: 42px; height: 42px;
+            border-radius: 12px;
+            display: grid; place-items: center;
+            background: var(--accent);
+            color: #fff;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+            box-shadow: 0 6px 16px var(--accent-ring);
+        }
+        .brand h1 { font-size: 1.05rem; font-weight: 700; margin: 0; line-height: 1.2; letter-spacing: -0.01em; }
+        .brand p { font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0; }
+
+        .icon-btn {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text-muted);
+            display: grid; place-items: center;
+            cursor: pointer;
+            font-size: 1.05rem;
+            transition: .2s ease;
+            flex-shrink: 0;
+        }
+        .icon-btn:hover { color: var(--text); border-color: var(--border-strong); transform: translateY(-1px); }
+
+        .section-title { font-size: 0.95rem; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.01em; }
+        .section-sub { font-size: 0.78rem; color: var(--text-muted); margin: 0 0 18px; }
+
+        .field { margin-bottom: 16px; }
+        .field-label {
+            font-weight: 600;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        .input, .select {
+            width: 100%;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 11px 13px;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color .15s ease, box-shadow .15s ease, background-color .3s ease;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        .input::placeholder { color: var(--text-soft); }
+        .input:focus, .select:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-ring);
+            background: var(--surface);
+        }
+
+        .select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 13px center;
+            padding-right: 38px;
+            cursor: pointer;
+        }
+        .select option { background: var(--surface); color: var(--text); }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .pass-wrap { position: relative; }
+        .pass-wrap .input { padding-right: 44px; }
+        .toggle-eye {
+            position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+            width: 34px; height: 34px; border-radius: 8px; border: none; background: transparent;
+            color: var(--text-muted); cursor: pointer; display: grid; place-items: center; font-size: 1rem;
+        }
+        .toggle-eye:hover { color: var(--accent); }
+        .field-hint { font-size: 0.72rem; color: var(--text-soft); margin-top: 5px; }
+
+        .btn-primary-app {
+            width: 100%;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 14px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            border-radius: var(--radius-sm);
+            margin-top: 6px;
+            cursor: pointer;
+            transition: .2s ease;
+            box-shadow: 0 8px 20px var(--accent-ring);
+        }
+        .btn-primary-app:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-primary-app:disabled { opacity: .65; cursor: not-allowed; }
+
+        .link-row { text-align: center; font-size: 0.82rem; color: var(--text-muted); margin-top: 16px; }
+        .link-row a { color: var(--accent); font-weight: 600; text-decoration: none; }
+        .link-row a:hover { text-decoration: underline; }
+
+        .alert-box {
+            padding: 11px 13px;
+            border-radius: var(--radius-sm);
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: none;
+        }
+        .alert-erro { background: var(--red-soft); color: var(--red); border: 1px solid var(--red); }
+        .alert-ok   { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+
+        /* Estado de sucesso (some com o formulário) */
+        .sucesso { text-align: center; display: none; }
+        .sucesso .ok-badge {
+            width: 56px; height: 56px; border-radius: 16px;
+            background: var(--green-soft); color: var(--green);
+            display: grid; place-items: center; margin: 8px auto 16px; font-size: 1.7rem;
+        }
+        .sucesso h2 { font-size: 1.05rem; font-weight: 700; margin: 0 0 8px; }
+        .sucesso p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin: 0 0 20px; }
+
+        .app-footer { text-align: center; font-size: 0.74rem; color: var(--text-soft); margin-top: 18px; }
+
+        @media (max-width: 480px) {
+            .card-app { padding: 20px; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <main class="card-app">
+        <header class="app-head">
+            <div class="brand">
+                <div class="brand-mark"><i class="bi bi-person-plus"></i></div>
+                <div>
+                    <h1>Criar cadastro</h1>
+                    <p>Prefeitura de Delta · Suporte Técnico</p>
+                </div>
+            </div>
+            <button type="button" class="icon-btn" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">
+                <i class="bi bi-moon-stars"></i>
+            </button>
+        </header>
+
+        <!-- Formulário de cadastro -->
+        <div id="viewForm">
+            <p class="section-sub">
+                Para abrir chamados você precisa de um cadastro aprovado por um técnico.
+                Preencha os dados abaixo — seu acesso fica pendente até a aprovação.
+            </p>
+
+            <div id="alertBox" class="alert-box"></div>
+
+            <form id="formCadastro">
+                <div class="grid-2">
+                    <div class="field">
+                        <label class="field-label" for="nome">Nome</label>
+                        <input type="text" id="nome" class="input" placeholder="Mateus" required>
+                    </div>
+                    <div class="field">
+                        <label class="field-label" for="sobrenome">Sobrenome</label>
+                        <input type="text" id="sobrenome" class="input" placeholder="Silva" required>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="field">
+                        <label class="field-label" for="telefone">Telefone</label>
+                        <input type="tel" id="telefone" class="input" placeholder="(34) 99999-9999" inputmode="numeric" required>
+                    </div>
+                    <div class="field">
+                        <label class="field-label" for="email">E-mail</label>
+                        <input type="email" id="email" class="input" placeholder="voce@email.com" autocomplete="username" required>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="senha">Senha de acesso</label>
+                    <div class="pass-wrap">
+                        <input type="password" id="senha" class="input" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required>
+                        <button type="button" class="toggle-eye" id="togglePassword" aria-label="Mostrar senha">
+                            <i class="bi bi-eye-slash" id="iconEye"></i>
+                        </button>
+                    </div>
+                    <div class="field-hint">Use ao menos 6 caracteres. É a senha que você vai usar para entrar.</div>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="setor">Setor / Secretaria</label>
+                    <select id="setor" class="select" required>
+                        <option value="" disabled selected>Selecione o seu local...</option>
+                        <option>Administração e Planejamento</option>
+                        <option>Arquivos</option>
+                        <option>Água e Saneamento</option>
+                        <option>Almoxarifado Geral</option>
+                        <option>Assistência Social / CRAS</option>
+                        <option>Câmara Municipal</option>
+                        <option>Comunicação e Eventos</option>
+                        <option>Conselho Tutelar</option>
+                        <option>Cultura e Turismo</option>
+                        <option>EE Ivan Mattar Soukef</option>
+                        <option>EM Ana de Castro Cançado</option>
+                        <option>Escola Municipal Olavo de Oliveira Ferreira</option>
+                        <option>CEMEI Patrícia Aparecida Dias</option>
+                        <option>CIECE</option>
+                        <option>Centro Municipal de Educação Infantil Ariane Depeatriz</option>
+                        <option>Clinica de Especialidades</option>
+                        <option>Esportes e Lazer</option>
+                        <option>Esf1</option>
+                        <option>Esf2</option>
+                        <option>Esf3</option>
+                        <option>Fazenda e Finanças</option>
+                        <option>Farmácia</option>
+                        <option>Gabinete do Prefeito</option>
+                        <option>Jurídico / Procuradoria</option>
+                        <option>Meio Ambiente</option>
+                        <option>Obras e Infraestrutura</option>
+                        <option>Posto de Saúde Geraldo Salge</option>
+                        <option>Recursos Humanos (RH)</option>
+                        <option>Secretaria de Saúde</option>
+                        <option>Secretaria de Governo</option>
+                        <option>Secretaria de Compras</option>
+                        <option>Secretaria de Educação</option>
+                        <option>Segurança Pública / Guarda</option>
+                        <option>Serviços Urbanos</option>
+                        <option>Transportes e Frota</option>
+                        <option>Terceira Idade</option>
+                        <option>Vigilância / Zoonose</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="cargo">Cargo / Função</label>
+                    <input type="text" id="cargo" class="input" placeholder="Ex: Assistente Administrativo" required>
+                </div>
+
+                <button type="submit" id="btnCadastrar" class="btn-primary-app">Enviar cadastro</button>
+            </form>
+
+            <div class="link-row">
+                Já tem cadastro? <a href="index.html">Entrar</a>
+            </div>
+        </div>
+
+        <!-- Estado de sucesso -->
+        <div id="viewSucesso" class="sucesso">
+            <div class="ok-badge"><i class="bi bi-check-lg"></i></div>
+            <h2>Cadastro enviado!</h2>
+            <p>
+                Seu cadastro foi registrado e está <strong>aguardando aprovação</strong> de um técnico.
+                Assim que for aprovado, você poderá entrar com seu e-mail e senha.
+            </p>
+            <a href="index.html" class="btn-primary-app" style="display:inline-block;text-decoration:none;text-align:center;">Voltar para o início</a>
+        </div>
+
+        <footer class="app-footer">&copy; 2026 Delta Cyber Security · Gestão em Tecnologia</footer>
+    </main>
+
+    <!-- Alternância de tema (claro/escuro) -->
+    <script>
+        (function () {
+            const btn = document.getElementById('themeToggle');
+            function syncIcon(t) {
+                const icon = btn.querySelector('i');
+                icon.className = t === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+            }
+            function apply(t) {
+                document.documentElement.setAttribute('data-theme', t);
+                localStorage.setItem('theme', t);
+                syncIcon(t);
+            }
+            syncIcon(document.documentElement.getAttribute('data-theme'));
+            btn.addEventListener('click', () => {
+                const atual = document.documentElement.getAttribute('data-theme');
+                apply(atual === 'dark' ? 'light' : 'dark');
+            });
+        })();
+
+        // Mostrar/esconder senha
+        (function () {
+            const toggle = document.getElementById('togglePassword');
+            toggle.onclick = () => {
+                const input = document.getElementById('senha');
+                const icon = document.getElementById('iconEye');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.replace('bi-eye-slash', 'bi-eye');
+                } else {
+                    input.type = 'password';
+                    icon.classList.replace('bi-eye', 'bi-eye-slash');
+                }
+            };
+        })();
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpXcAHwayq8AN3VR7Sj7VYteAwSluKovo",
+            authDomain: "sistema-chamados-c3e61.firebaseapp.com",
+            projectId: "sistema-chamados-c3e61",
+            storageBucket: "sistema-chamados-c3e61.firebasestorage.app",
+            appId: "1:782902435377:web:937600794bd6b7c0397f10"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Nome e sobrenome: só letras (com acentos), primeira maiúscula — mesmo padrão do index.html
+        const formatarNome = (e) => {
+            let val = e.target.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '');
+            if (val.length > 0) val = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+            e.target.value = val;
+        };
+        document.getElementById('nome').addEventListener('input', formatarNome);
+        document.getElementById('sobrenome').addEventListener('input', formatarNome);
+
+        // Telefone: apenas números, formatado como (DD) 9XXXX-XXXX
+        document.getElementById('telefone').addEventListener('input', (e) => {
+            let d = e.target.value.replace(/\D/g, '').slice(0, 11);
+            let out = d;
+            if (d.length > 2)  out = `(${d.slice(0, 2)}) ${d.slice(2)}`;
+            if (d.length > 7)  out = `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+            e.target.value = out;
+        });
+
+        const alertBox = document.getElementById('alertBox');
+        const mostrarErro = (msg) => {
+            alertBox.className = 'alert-box alert-erro';
+            alertBox.textContent = msg;
+            alertBox.style.display = 'block';
+        };
+
+        // Traduz os códigos de erro do Firebase Auth para mensagens claras ao cidadão
+        const traduzErro = (code) => ({
+            'auth/email-already-in-use': 'Este e-mail já possui cadastro. Tente entrar.',
+            'auth/invalid-email': 'E-mail inválido.',
+            'auth/weak-password': 'Senha fraca: use ao menos 6 caracteres.'
+        }[code] || 'Não foi possível concluir o cadastro. Tente novamente.');
+
+        document.getElementById('formCadastro').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnCadastrar');
+            alertBox.style.display = 'none';
+
+            const nome = document.getElementById('nome').value.trim();
+            const sobrenome = document.getElementById('sobrenome').value.trim();
+            const telefone = document.getElementById('telefone').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value;
+            const setor = document.getElementById('setor').value;
+            const cargo = document.getElementById('cargo').value.trim();
+
+            if (!nome || !sobrenome || !telefone || !email || !senha || !setor || !cargo) {
+                mostrarErro('Preencha todos os campos.');
+                return;
+            }
+            if (telefone.replace(/\D/g, '').length < 10) {
+                mostrarErro('Informe um telefone válido com DDD.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = 'Enviando...';
+
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, senha);
+
+                // Perfil do solicitante — status "pendente" até um técnico aprovar
+                await setDoc(doc(db, 'usuarios', cred.user.uid), {
+                    nome, sobrenome, telefone, email, setor, cargo,
+                    status: 'pendente',
+                    dataCadastro: serverTimestamp()
+                });
+
+                // Não deixa logado: o acesso só vale depois da aprovação
+                await signOut(auth);
+
+                document.getElementById('viewForm').style.display = 'none';
+                document.getElementById('viewSucesso').style.display = 'block';
+            } catch (err) {
+                console.error('Erro no cadastro:', err.code, err.message);
+                mostrarErro(traduzErro(err.code));
+                btn.disabled = false;
+                btn.innerText = 'Enviar cadastro';
+            }
+        };
+    </script>
+</body>
+</html>

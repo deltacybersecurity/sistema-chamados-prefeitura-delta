@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suporte Técnico · Prefeitura de Delta</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <script>
+        (function () {
+            var t = localStorage.getItem('theme');
+            if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --accent: #4f46e5; --accent-hover: #4338ca;
+            --accent-soft: rgba(79,70,229,.10); --accent-ring: rgba(79,70,229,.20);
+            --bg-1: #fbfbfd; --bg-2: #eef1f6; --surface: #ffffff; --surface-2: #f6f7f9;
+            --border: #e6e8ec; --border-strong: #d6d9df;
+            --text: #14171f; --text-muted: #6b7280; --text-soft: #9aa1ac;
+            --red: #dc2626; --red-soft: rgba(220,38,38,.10);
+            --amber: #d97706; --amber-soft: rgba(217,119,6,.12);
+            --shadow: 0 1px 2px rgba(16,24,40,.04), 0 12px 40px rgba(16,24,40,.08);
+            --radius: 16px; --radius-sm: 10px;
+        }
+        html[data-theme="dark"] {
+            --accent: #6366f1; --accent-hover: #818cf8;
+            --accent-soft: rgba(99,102,241,.16); --accent-ring: rgba(99,102,241,.30);
+            --bg-1: #0a0c10; --bg-2: #11141b; --surface: #15181f; --surface-2: #1b1f27;
+            --border: #262b34; --border-strong: #333945;
+            --text: #f1f3f6; --text-muted: #99a1ad; --text-soft: #6b7280;
+            --red: #f87171; --red-soft: rgba(248,113,113,.14);
+            --amber: #fbbf24; --amber-soft: rgba(251,191,36,.14);
+            --shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 50px rgba(0,0,0,.55);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: radial-gradient(1200px 600px at 85% -10%, var(--accent-soft), transparent 60%),
+                        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+            background-attachment: fixed; font-family: 'Inter', sans-serif; color: var(--text);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            margin: 0; padding: 20px; transition: background-color .3s ease, color .3s ease;
+        }
+        .theme-fab {
+            position: fixed; top: 18px; right: 18px; width: 40px; height: 40px; border-radius: 10px;
+            border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+            display: grid; place-items: center; cursor: pointer; font-size: 1.05rem; transition: .2s ease; box-shadow: var(--shadow);
+        }
+        .theme-fab:hover { color: var(--text); border-color: var(--border-strong); }
+        .login-box {
+            background: var(--surface); border: 1px solid var(--border); padding: 36px 32px;
+            border-radius: var(--radius); width: 100%; max-width: 400px; text-align: center; box-shadow: var(--shadow);
+        }
+        .brand-badge {
+            width: 52px; height: 52px; border-radius: 14px; background: var(--accent); color: #fff;
+            display: grid; place-items: center; margin: 0 auto 16px; font-size: 1.4rem; box-shadow: 0 8px 20px var(--accent-ring);
+        }
+        .brand-logo { font-weight: 700; font-size: 1.3rem; color: var(--text); margin-bottom: 4px; letter-spacing: -0.02em; }
+        .login-subtitle { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; margin-bottom: 28px; }
+        .field { margin-bottom: 18px; text-align: left; }
+        .field-label { color: var(--text-muted); font-weight: 600; font-size: 0.78rem; display: block; text-align: left; margin-bottom: 6px; }
+        .input {
+            width: 100%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+            padding: 11px 13px; font-size: 0.9rem; border-radius: var(--radius-sm); font-family: inherit;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .input::placeholder { color: var(--text-soft); }
+        .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); background: var(--surface); }
+        .pass-wrap { position: relative; }
+        .pass-wrap .input { padding-right: 44px; }
+        .toggle-eye {
+            position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px;
+            border-radius: 8px; border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+            display: grid; place-items: center; font-size: 1rem;
+        }
+        .toggle-eye:hover { color: var(--accent); }
+        .btn-logar {
+            background: var(--accent); color: #fff; border: none; padding: 13px; width: 100%;
+            border-radius: var(--radius-sm); font-weight: 700; font-size: 0.92rem; margin-top: 6px; cursor: pointer;
+            transition: 0.2s ease; box-shadow: 0 8px 20px var(--accent-ring);
+        }
+        .btn-logar:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-logar:disabled { opacity: .65; cursor: not-allowed; }
+        #msgBox { padding: 10px; border-radius: var(--radius-sm); margin-top: 18px; font-size: 0.8rem; font-weight: 600; display: none; }
+        #msgBox.erro { background: var(--red-soft); color: var(--red); border: 1px solid var(--red); }
+        #msgBox.aviso { background: var(--amber-soft); color: var(--amber); border: 1px solid var(--amber); }
+        .notice-card {
+            display: flex; align-items: flex-start; gap: 10px;
+            background: var(--amber-soft); border: 1px solid var(--amber); color: var(--text);
+            border-radius: var(--radius-sm); padding: 12px 13px; margin-bottom: 20px;
+            font-size: 0.8rem; line-height: 1.5; text-align: left;
+        }
+        .notice-card i { color: var(--amber); font-size: 1rem; margin-top: 1px; flex-shrink: 0; }
+        .notice-card strong { color: var(--amber); font-weight: 700; }
+        .link-row { margin-top: 22px; font-size: 0.82rem; color: var(--text-muted); }
+        .link-row a { color: var(--accent); font-weight: 600; text-decoration: none; }
+        .link-row a:hover { text-decoration: underline; }
+        .tec-link { margin-top: 18px; font-size: 0.74rem; }
+        .tec-link a { color: var(--text-soft); text-decoration: none; }
+        .tec-link a:hover { color: var(--accent); }
+        .footer-text { margin-top: 22px; font-size: 0.74rem; color: var(--text-soft); }
+
+        /* Estilos do Cookie Banner em conformidade com a LGPD e o tema do sistema */
+        .cookie-banner {
+            position: fixed; bottom: 20px; left: 20px; right: 20px; 
+            background: var(--surface); border: 1px solid var(--border-strong); 
+            padding: 20px; border-radius: var(--radius); display: none; z-index: 99999; 
+            box-shadow: var(--shadow); text-align: left; max-width: 500px; margin-left: auto;
+            transition: background-color .3s ease, border-color .3s ease;
+        }
+        .cookie-text { margin: 0 0 16px 0; font-size: 0.84rem; line-height: 1.5; color: var(--text-muted); }
+        .cookie-text strong { color: var(--accent); }
+        .btn-cookie {
+            background: var(--accent); color: #fff; border: none; padding: 8px 16px;
+            border-radius: var(--radius-sm); font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            transition: 0.2s ease;
+        }
+        .btn-cookie:hover { background: var(--accent-hover); }
+    </style>
+</head>
+<body>
+
+    <button type="button" class="theme-fab" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">
+        <i class="bi bi-moon-stars"></i>
+    </button>
+
+    <div class="login-box">
+        <div class="brand-badge"><i class="bi bi-tools"></i></div>
+        <div class="brand-logo">Suporte Técnico</div>
+        <p class="login-subtitle">Prefeitura Municipal de Delta · Acesse sua conta</p>
+
+        <div class="notice-card">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Para melhorar a experiência do usuário e a segurança do sistema, agora é necessário ter um <strong>cadastro</strong> com informações básicas para acessar o sistema e abrir chamados.<br>Att, Equipe T.I.</span>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="email">E-mail</label>
+            <input type="email" id="email" class="input" placeholder="voce@email.com" autocomplete="username">
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="senha">Senha</label>
+            <div class="pass-wrap">
+                <input type="password" id="senha" class="input" placeholder="Sua senha" autocomplete="current-password">
+                <button type="button" class="toggle-eye" id="togglePassword" aria-label="Mostrar senha">
+                    <i class="bi bi-eye-slash" id="iconEye"></i>
+                </button>
+            </div>
+        </div>
+
+        <button id="btnEntrar" class="btn-logar">Entrar</button>
+
+        <div id="msgBox"></div>
+
+        <div class="link-row">
+            <a href="#" id="linkEsqueciSenha">Esqueceu a senha?</a>
+        </div>
+
+        <div id="painelEsqueci" style="display:none;">
+            <div class="field" style="margin-top:14px;">
+                <label class="field-label" for="emailReset">Confirme seu e-mail de acesso</label>
+                <input type="email" id="emailReset" class="input" placeholder="voce@email.com" autocomplete="username">
+            </div>
+            <button id="btnSolicitarReset" class="btn-logar">Solicitar redefinição</button>
+            <div class="link-row"><a href="#" id="linkCancelarReset">Cancelar</a></div>
+        </div>
+
+        <div class="link-row">
+            Ainda não tem cadastro? <a href="cadastro.html">Criar cadastro</a>
+        </div>
+
+        <div class="footer-text">&copy; 2026 Delta Cyber Security · Gestão em Tecnologia</div>
+    </div>
+
+    <div id="bannerCookies" class="cookie-banner">
+        <p class="cookie-text">
+            A <strong>Delta Cyber Security</strong> utiliza cookies essenciais para o correto funcionamento do help-desk, autenticação de sessão e recursos de segurança, em total conformidade com a LGPD.
+        </p>
+        <button id="btnAceitarCookies" class="btn-cookie">Aceitar e Continuar</button>
+    </div>
+
+    <script>
+        (function () {
+            const btn = document.getElementById('themeToggle');
+            function syncIcon(t) { btn.querySelector('i').className = t === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars'; }
+            function apply(t) { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); syncIcon(t); }
+            syncIcon(document.documentElement.getAttribute('data-theme'));
+            btn.addEventListener('click', () => {
+                apply(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+            });
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const banner = document.getElementById('bannerCookies');
+            const btnAceitar = document.getElementById('btnAceitarCookies');
+
+            // Exibe o banner imediatamente se o consentimento não existir
+            if (!localStorage.getItem('delta_cookies_aceitos')) {
+                banner.style.display = 'block';
+            }
+
+            btnAceitar.addEventListener('click', () => {
+                localStorage.setItem('delta_cookies_aceitos', 'true');
+                banner.style.display = 'none';
+            });
+        })();
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCpXcAHwayq8AN3VR7Sj7VYteAwSluKovo",
+            authDomain: "sistema-chamados-c3e61.firebaseapp.com",
+            projectId: "sistema-chamados-c3e61",
+            storageBucket: "sistema-chamados-c3e61.firebasestorage.app",
+            appId: "1:782902435377:web:937600794bd6b7c0397f10"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const btn = document.getElementById('btnEntrar');
+        const msgBox = document.getElementById('msgBox');
+        let mostrarMsgLogin = false;   // só mostra mensagem quando o clique de login disparou o fluxo
+
+        const aviso = (msg, tipo) => {
+            msgBox.className = tipo;
+            msgBox.textContent = msg;
+            msgBox.style.display = 'block';
+        };
+        const resetBtn = () => { btn.disabled = false; btn.innerText = 'Entrar'; };
+
+        // Mostrar/esconder senha
+        document.getElementById('togglePassword').onclick = () => {
+            const input = document.getElementById('senha');
+            const icon = document.getElementById('iconEye');
+            if (input.type === 'password') { input.type = 'text'; icon.classList.replace('bi-eye-slash', 'bi-eye'); }
+            else { input.type = 'password'; icon.classList.replace('bi-eye', 'bi-eye-slash'); }
+        };
+
+        // Esqueci a senha: abre um painel simples pra solicitar redefinição.
+        const painelEsqueci = document.getElementById('painelEsqueci');
+        document.getElementById('linkEsqueciSenha').onclick = (e) => {
+            e.preventDefault();
+            msgBox.style.display = 'none';
+            painelEsqueci.style.display = 'block';
+        };
+        document.getElementById('linkCancelarReset').onclick = (e) => {
+            e.preventDefault();
+            painelEsqueci.style.display = 'none';
+        };
+        document.getElementById('btnSolicitarReset').onclick = async () => {
+            const emailReset = document.getElementById('emailReset').value.trim();
+            if (!emailReset) { aviso('Informe o e-mail.', 'erro'); return; }
+            const btnReset = document.getElementById('btnSolicitarReset');
+            btnReset.disabled = true; btnReset.innerText = 'Enviando...';
+            try {
+                await addDoc(collection(db, 'resetSenha'), {
+                    email: emailReset,
+                    status: 'pendente',
+                    dataSolicitacao: serverTimestamp()
+                });
+                painelEsqueci.style.display = 'none';
+                aviso('Solicitação enviada! Entre em contato com o suporte de TI para agilizar a aprovação.', 'aviso');
+            } catch (e) {
+                console.error('[reset] falha ao solicitar', e);
+                aviso('Não foi possível enviar a solicitação. Tente novamente.', 'erro');
+            } finally {
+                btnReset.disabled = false; btnReset.innerText = 'Solicitar redefinição';
+            }
+        };
+
+        // Fonte única da verdade: reage a mudança de sessão e decide o destino.
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) { resetBtn(); return; }
+            try {
+                const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+                if (adminSnap.exists()) { location.href = 'admin.html'; return; }
+
+                const snap = await getDoc(doc(db, 'usuarios', user.uid));
+                if (!snap.exists()) {
+                    await signOut(auth);
+                    if (mostrarMsgLogin) aviso('Cadastro não encontrado. Confira o e-mail ou crie um cadastro.', 'erro');
+                    mostrarMsgLogin = false;
+                    return;
+                }
+                const status = snap.data().status;
+                if (status === 'aprovado') { location.href = 'painel.html'; return; }
+                await signOut(auth);
+                if (mostrarMsgLogin) aviso(status === 'pendente'
+                    ? 'Seu cadastro ainda está aguardando aprovação de um técnico.'
+                    : 'Seu cadastro foi rejeitado. Procure o suporte de TI.', 'aviso');
+                mostrarMsgLogin = false;
+            } catch (e) {
+                console.error('[login] falha ao verificar cadastro', e);
+                await signOut(auth);
+                if (mostrarMsgLogin) aviso('Não foi possível verificar seu cadastro. Tente novamente.', 'erro');
+                mostrarMsgLogin = false;
+            }
+        });
+
+        btn.onclick = async () => {
+            const email = document.getElementById('email').value.trim();
+            const senha = document.getElementById('senha').value;
+            if (!email || !senha) { aviso('Informe e-mail e senha.', 'erro'); return; }
+
+            msgBox.style.display = 'none';
+            btn.disabled = true; btn.innerText = 'Entrando...';
+            mostrarMsgLogin = true;
+            try {
+                await signInWithEmailAndPassword(auth, email, senha);
+            } catch (error) {
+                console.error('Erro no login:', error.code, error.message);
+                mostrarMsgLogin = false;
+                aviso('E-mail ou senha inválidos.', 'erro');
+                resetBtn();
+            }
+        };
+    </script>
+</body>
+</html>

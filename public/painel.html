@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Painel · Prefeitura de Delta</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Aplica o tema antes da pintura para evitar "flash" -->
+    <script>
+        (function () {
+            var t = localStorage.getItem('theme');
+            if (!t) t = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+
+    <style>
+        :root {
+            --accent: #4f46e5; --accent-hover: #4338ca;
+            --accent-soft: rgba(79,70,229,.10); --accent-ring: rgba(79,70,229,.20);
+            --bg-1: #fbfbfd; --bg-2: #eef1f6; --surface: #ffffff; --surface-2: #f6f7f9;
+            --border: #e6e8ec; --border-strong: #d6d9df;
+            --text: #14171f; --text-muted: #6b7280; --text-soft: #9aa1ac;
+            --green: #16a34a; --green-soft: rgba(22,163,74,.10);
+            --amber: #d97706; --amber-soft: rgba(217,119,6,.12);
+            --red: #dc2626; --red-soft: rgba(220,38,38,.10);
+            --shadow: 0 1px 2px rgba(16,24,40,.04), 0 12px 40px rgba(16,24,40,.08);
+            --radius: 16px; --radius-sm: 10px;
+        }
+        html[data-theme="dark"] {
+            --accent: #6366f1; --accent-hover: #818cf8;
+            --accent-soft: rgba(99,102,241,.16); --accent-ring: rgba(99,102,241,.30);
+            --bg-1: #0a0c10; --bg-2: #11141b; --surface: #15181f; --surface-2: #1b1f27;
+            --border: #262b34; --border-strong: #333945;
+            --text: #f1f3f6; --text-muted: #99a1ad; --text-soft: #6b7280;
+            --green: #34d399; --green-soft: rgba(52,211,153,.14);
+            --amber: #fbbf24; --amber-soft: rgba(251,191,36,.14);
+            --red: #f87171; --red-soft: rgba(248,113,113,.14);
+            --shadow: 0 1px 2px rgba(0,0,0,.4), 0 16px 50px rgba(0,0,0,.55);
+        }
+        * { box-sizing: border-box; }
+        body {
+            background: radial-gradient(1200px 600px at 85% -10%, var(--accent-soft), transparent 60%),
+                        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+            background-attachment: fixed; color: var(--text); font-family: 'Inter', sans-serif;
+            min-height: 100vh; padding: 28px 16px; margin: 0;
+            transition: background-color .3s ease, color .3s ease;
+        }
+        .wrap { max-width: 640px; margin: 0 auto; }
+
+        /* Top bar */
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+        .user-chip { display: flex; align-items: center; gap: 10px; }
+        .user-avatar {
+            width: 42px; height: 42px; border-radius: 12px; background: var(--accent); color: #fff;
+            display: grid; place-items: center; font-weight: 700; font-size: 1.05rem; flex-shrink: 0;
+            box-shadow: 0 6px 16px var(--accent-ring);
+        }
+        .user-chip h1 { font-size: 1rem; font-weight: 700; margin: 0; line-height: 1.2; letter-spacing: -0.01em; }
+        .user-chip p { font-size: 0.76rem; color: var(--text-muted); margin: 2px 0 0; }
+        .topbar-actions { display: flex; gap: 8px; }
+        .icon-btn {
+            width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--border);
+            background: var(--surface); color: var(--text-muted); display: grid; place-items: center;
+            cursor: pointer; font-size: 1.05rem; transition: .2s ease;
+        }
+        .icon-btn:hover { color: var(--text); border-color: var(--border-strong); transform: translateY(-1px); }
+        .icon-btn.danger:hover { color: var(--red); border-color: var(--red); }
+
+        /* Botão principal "Abrir chamado" */
+        .btn-abrir {
+            width: 100%; display: flex; align-items: center; justify-content: center; gap: 9px;
+            background: var(--accent); color: #fff; border: none; padding: 15px;
+            border-radius: var(--radius-sm); font-weight: 700; font-size: 0.95rem; cursor: pointer;
+            transition: .2s ease; box-shadow: 0 8px 20px var(--accent-ring); margin-bottom: 20px;
+        }
+        .btn-abrir:hover { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-abrir i { font-size: 1.15rem; }
+
+        /* Formulário de abertura (colapsável) */
+        .form-panel {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px; box-shadow: var(--shadow); margin-bottom: 24px; display: none;
+        }
+        .form-panel.open { display: block; }
+        .form-panel-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .form-panel-head h2 { font-size: 0.95rem; font-weight: 700; margin: 0; }
+        .field { margin-bottom: 16px; }
+        .field-label { font-weight: 600; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 6px; display: block; }
+        .input, .select, .textarea {
+            width: 100%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+            padding: 11px 13px; border-radius: var(--radius-sm); font-size: 0.9rem; font-family: inherit;
+            transition: border-color .15s ease, box-shadow .15s ease, background-color .3s ease;
+            -webkit-appearance: none; appearance: none;
+        }
+        .input::placeholder, .textarea::placeholder { color: var(--text-soft); }
+        .input:focus, .select:focus, .textarea:focus {
+            outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); background: var(--surface);
+        }
+        .textarea { resize: vertical; min-height: 84px; }
+        .select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 13px center; padding-right: 38px; cursor: pointer;
+        }
+        .select option { background: var(--surface); color: var(--text); }
+        .segmented { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .segmented input { position: absolute; opacity: 0; pointer-events: none; }
+        .segmented label {
+            display: flex; align-items: center; justify-content: center; gap: 7px; padding: 11px;
+            border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2);
+            color: var(--text-muted); font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: .15s ease; user-select: none;
+        }
+        .segmented label .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .seg-low .dot { background: var(--green); } .seg-mid .dot { background: var(--amber); } .seg-high .dot { background: var(--red); }
+        #urg-baixa:checked + label { border-color: var(--green); background: var(--green-soft); color: var(--green); }
+        #urg-media:checked + label { border-color: var(--amber); background: var(--amber-soft); color: var(--amber); }
+        #urg-alta:checked  + label { border-color: var(--red);   background: var(--red-soft);   color: var(--red); }
+        .btn-primary-app {
+            width: 100%; background: var(--accent); color: #fff; border: none; padding: 13px; font-weight: 700;
+            font-size: 0.9rem; border-radius: var(--radius-sm); margin-top: 4px; cursor: pointer; transition: .2s ease;
+            box-shadow: 0 8px 20px var(--accent-ring);
+        }
+        .btn-primary-app:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+        .btn-primary-app:disabled { opacity: .65; cursor: not-allowed; }
+
+        /* Abas */
+        .tabs { display: flex; gap: 6px; background: var(--surface-2); border: 1px solid var(--border);
+                border-radius: var(--radius-sm); padding: 4px; margin-bottom: 18px; }
+        .tab { flex: 1; border: none; background: transparent; color: var(--text-muted); font-weight: 600;
+               font-size: 0.83rem; padding: 9px; border-radius: 8px; cursor: pointer; transition: .15s ease; }
+        .tab.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow); }
+
+        /* Cards de chamado (reuso do acompanhar.html) */
+        .card-chamado { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+                        padding: 18px; margin-bottom: 16px; box-shadow: var(--shadow); }
+        .card-notif { border-color: var(--red); box-shadow: 0 0 0 1px var(--red), var(--shadow); }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+        .card-title { font-size: 0.98rem; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+        .card-dep { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+        .badge-status { font-size: 0.68rem; font-weight: 700; padding: 5px 11px; border-radius: 50px; white-space: nowrap; border: 1px solid transparent; }
+        .badge-aberto { background: var(--amber-soft); color: var(--amber); border-color: var(--amber); }
+        .badge-ok { background: var(--green-soft); color: var(--green); border-color: var(--green); }
+        .desc-pessoal { background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+                        padding: 11px 13px; border-radius: var(--radius-sm); font-size: 0.82rem; line-height: 1.5;
+                        margin: 14px 0; color: var(--text-muted); }
+        .desc-pessoal strong { color: var(--text); font-weight: 600; }
+        .sol-box { background: var(--green-soft); border: 1px solid var(--green); border-radius: var(--radius-sm);
+                   padding: 11px 13px; font-size: 0.82rem; line-height: 1.5; margin-bottom: 14px; color: var(--text); }
+        .sol-box strong { color: var(--green); }
+        .chat-box { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+                    padding: 12px; max-height: 200px; overflow-y: auto; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .msg-line { font-size: 0.82rem; line-height: 1.5; }
+        .msg-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 2px; }
+        .msg-author { font-weight: 700; font-size: 0.78rem; }
+        .msg-author.me { color: var(--text-muted); } .msg-author.them { color: var(--accent); }
+        .msg-time { font-size: 0.68rem; color: var(--text-soft); white-space: nowrap; }
+        .msg-text { color: var(--text); }
+        .chat-empty { font-size: 0.8rem; color: var(--text-soft); text-align: center; padding: 8px 0; }
+        .btn-responder { background: transparent; border: 1px solid var(--accent); color: var(--accent); font-weight: 600;
+                         padding: 10px; border-radius: var(--radius-sm); width: 100%; font-size: 0.84rem; cursor: pointer;
+                         transition: .2s ease; display: flex; align-items: center; justify-content: center; gap: 7px; }
+        .btn-responder:hover { background: var(--accent); color: #fff; }
+        .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); display: inline-block; }
+        .empty-state { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius);
+                       padding: 32px 20px; text-align: center; color: var(--text-muted); font-size: 0.88rem; }
+        .empty-state i { font-size: 1.8rem; color: var(--text-soft); display: block; margin-bottom: 8px; }
+
+        .alert-box { padding: 11px 13px; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 600; margin-bottom: 16px; display: none; }
+        .alert-erro { background: var(--red-soft); color: var(--red); border: 1px solid var(--red); }
+        .alert-ok { background: var(--green-soft); color: var(--green); border: 1px solid var(--green); }
+        .app-footer { text-align: center; font-size: 0.74rem; color: var(--text-soft); padding: 24px 12px 6px; }
+        .loading { text-align: center; color: var(--text-muted); font-size: 0.9rem; padding: 40px 0; }
+
+        @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <!-- Enquanto valida a sessão -->
+    <div id="loading" class="loading"><i class="bi bi-arrow-repeat"></i> Carregando...</div>
+
+    <!-- Conteúdo do painel (revelado após confirmar cadastro aprovado) -->
+    <div id="app" style="display:none;">
+        <div class="topbar">
+            <div class="user-chip">
+                <div class="user-avatar" id="userAvatar">?</div>
+                <div>
+                    <h1 id="userNome">Olá</h1>
+                    <p id="userSetor"></p>
+                </div>
+            </div>
+            <div class="topbar-actions">
+                <button type="button" class="icon-btn" id="btnPainelTec" onclick="location.href='admin.html'" aria-label="Painel Técnico" title="Painel Técnico" style="display:none;">
+                    <i class="bi bi-kanban-fill"></i>
+                </button>
+                <button type="button" class="icon-btn" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">
+                    <i class="bi bi-moon-stars"></i>
+                </button>
+                <button type="button" class="icon-btn danger" onclick="sair()" aria-label="Sair" title="Sair">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <button type="button" class="btn-abrir" id="btnAbrir" onclick="toggleForm()">
+            <i class="bi bi-plus-circle-fill"></i> Abrir novo chamado
+        </button>
+
+        <!-- Formulário de abertura -->
+        <div class="form-panel" id="formPanel">
+            <div class="form-panel-head">
+                <h2>Novo chamado</h2>
+                <button type="button" class="icon-btn" onclick="toggleForm()" aria-label="Fechar"><i class="bi bi-x-lg"></i></button>
+            </div>
+
+            <div id="alertForm" class="alert-box"></div>
+
+            <form id="formChamado">
+                <div class="field">
+                    <label class="field-label" for="departamento">Departamento / Secretaria</label>
+                    <select id="departamento" class="select" required>
+                        <option value="" disabled selected>Selecione o local...</option>
+                        <option>Administração e Planejamento</option>
+                        <option>Arquivos</option>
+                        <option>Água e Saneamento</option>
+                        <option>Almoxarifado Geral</option>
+                        <option>Assistência Social / CRAS</option>
+                        <option>Câmara Municipal</option>
+                        <option>Comunicação e Eventos</option>
+                        <option>Conselho Tutelar</option>
+                        <option>Cultura e Turismo</option>
+                        <option>EE Ivan Mattar Soukef</option>
+                        <option>EM Ana de Castro Cançado</option>
+                        <option>Escola Municipal Olavo de Oliveira Ferreira</option>
+                        <option>CEMEI Patrícia Aparecida Dias</option>
+                        <option>CIECE</option>
+                        <option>Centro Municipal de Educação Infantil Ariane Depeatriz</option>
+                        <option>Clinica de Especialidades</option>
+                        <option>Esportes e Lazer</option>
+                        <option>Esf1</option>
+                        <option>Esf2</option>
+                        <option>Esf3</option>
+                        <option>Fazenda e Finanças</option>
+                        <option>Farmácia</option>
+                        <option>Gabinete do Prefeito</option>
+                        <option>Jurídico / Procuradoria</option>
+                        <option>Meio Ambiente</option>
+                        <option>Obras e Infraestrutura</option>
+                        <option>Posto de Saúde Geraldo Salge</option>
+                        <option>Recursos Humanos (RH)</option>
+                        <option>Secretaria de Saúde</option>
+                        <option>Secretaria de Governo</option>
+                        <option>Secretaria de Compras</option>
+                        <option>Secretaria de Educação</option>
+                        <option>Segurança Pública / Guarda</option>
+                        <option>Serviços Urbanos</option>
+                        <option>Transportes e Frota</option>
+                        <option>Terceira Idade</option>
+                        <option>Vigilância / Zoonose</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="titulo">Tipo de problema</label>
+                    <select id="titulo" class="select" required>
+                        <option value="" disabled selected>Selecione o reparo...</option>
+                        <option>Computador não liga ou Lento</option>
+                        <option>Configuração de E-mail / Gmail</option>
+                        <option>Impressora (Papel preso / Tonner)</option>
+                        <option>Instalação de Software / Programas</option>
+                        <option>Internet Caindo / Sem Wi-Fi</option>
+                        <option>Rede Interna / Pastas Compartilhadas</option>
+                        <option>Sistema da Prefeitura (Erro de Login)</option>
+                        <option>Telefone Fixo / Ramal com Ruído</option>
+                        <option>Vírus / Mensagens Suspeitas</option>
+                        <option>Outros (Descrever abaixo)</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label class="field-label" for="descricao">Descrição detalhada</label>
+                    <textarea id="descricao" class="textarea" rows="3" placeholder="Descreva o problema aqui..." required></textarea>
+                </div>
+
+                <div class="field">
+                    <label class="field-label">Urgência</label>
+                    <div class="segmented">
+                        <input type="radio" name="urgencia" id="urg-baixa" value="Baixa" checked>
+                        <label class="seg-low" for="urg-baixa"><span class="dot"></span>Baixa</label>
+                        <input type="radio" name="urgencia" id="urg-media" value="Média">
+                        <label class="seg-mid" for="urg-media"><span class="dot"></span>Média</label>
+                        <input type="radio" name="urgencia" id="urg-alta" value="Alta">
+                        <label class="seg-high" for="urg-alta"><span class="dot"></span>Alta</label>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnRegistrar" class="btn-primary-app">Registrar chamado</button>
+            </form>
+        </div>
+
+        <!-- Abas de chamados -->
+        <div class="tabs">
+            <button class="tab active" data-tab="andamento" onclick="trocarTab('andamento',this)">Em andamento</button>
+            <button class="tab" data-tab="finalizados" onclick="trocarTab('finalizados',this)">Finalizados</button>
+        </div>
+
+        <div id="listaChamados"></div>
+
+        <footer class="app-footer">&copy; 2026 Prefeitura de Delta · Gestão em Tecnologia</footer>
+    </div>
+</div>
+
+<!-- Alternância de tema (claro/escuro) -->
+<script>
+    (function () {
+        const btn = document.getElementById('themeToggle');
+        function syncIcon(t) { btn.querySelector('i').className = t === 'dark' ? 'bi bi-sun' : 'bi bi-moon-stars'; }
+        function apply(t) { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('theme', t); syncIcon(t); }
+        syncIcon(document.documentElement.getAttribute('data-theme'));
+        btn.addEventListener('click', () => {
+            apply(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+        });
+    })();
+</script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, onSnapshot, query, where, serverTimestamp }
+        from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCpXcAHwayq8AN3VR7Sj7VYteAwSluKovo",
+        authDomain: "sistema-chamados-c3e61.firebaseapp.com",
+        projectId: "sistema-chamados-c3e61",
+        storageBucket: "sistema-chamados-c3e61.firebasestorage.app",
+        appId: "1:782902435377:web:937600794bd6b7c0397f10"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let perfil = null;          // { uid, nome, sobrenome, setor, ... }
+    let meusChamados = [];
+    let tabAtual = 'andamento';
+
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+
+    // ===== Gate de acesso: só cadastro aprovado entra =====
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { location.replace('index.html'); return; }
+        try {
+            const snap = await getDoc(doc(db, 'usuarios', user.uid));
+            if (!snap.exists() || snap.data().status !== 'aprovado') {
+                await signOut(auth);
+                location.replace('index.html');
+                return;
+            }
+            perfil = { uid: user.uid, ...snap.data() };
+
+            // Se essa pessoa também é técnico, mostra o atalho de volta pro painel admin
+            const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+            if (adminSnap.exists()) document.getElementById('btnPainelTec').style.display = 'grid';
+
+            iniciar();
+        } catch (e) {
+            console.error('[painel] falha ao verificar cadastro', e);
+            location.replace('index.html');
+        }
+    });
+
+    window.sair = async () => { await signOut(auth); location.replace('index.html'); };
+
+    function iniciar() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+
+        document.getElementById('userAvatar').textContent = (perfil.nome?.[0] || '?').toUpperCase();
+        document.getElementById('userNome').textContent = `Olá, ${perfil.nome}`;
+        document.getElementById('userSetor').textContent = perfil.setor || '';
+
+        // Pré-seleciona o setor do cadastro como departamento padrão do chamado
+        const dep = document.getElementById('departamento');
+        if (perfil.setor && [...dep.options].some(o => o.value === perfil.setor)) dep.value = perfil.setor;
+
+        assinarChamados();
+    }
+
+    // ===== Meus chamados em tempo real (só os meus, pela regra ownerUid) =====
+    function assinarChamados() {
+        onSnapshot(query(collection(db, 'chamados'), where('ownerUid', '==', perfil.uid)), (snap) => {
+            // ordena por data de criação (desc) no cliente, evitando índice composto
+            meusChamados = snap.docs.map(d => ({ id: d.id, c: d.data() }))
+                .sort((a, b) => (b.c.dataCriacao?.toMillis?.() || 0) - (a.c.dataCriacao?.toMillis?.() || 0));
+            render();
+        }, (err) => {
+            console.error('[painel] falha ao ler chamados (regras do Firestore?)', err);
+            document.getElementById('listaChamados').innerHTML =
+                `<div class="empty-state"><i class="bi bi-exclamation-triangle"></i>Não foi possível carregar seus chamados.</div>`;
+        });
+    }
+
+    function cardHtml(id, c) {
+        const msgs = c.mensagens || [];
+        const concluido = c.status === 'Concluído';
+        const temNotif = msgs.some(m => m.autor.toLowerCase() !== perfil.nome.toLowerCase() && m.lido === false);
+        const chatHtml = msgs.length
+            ? msgs.map(m => {
+                const ehMeu = m.autor.toLowerCase() === perfil.nome.toLowerCase();
+                return `<div class="msg-line">
+                    <div class="msg-head">
+                        <span class="msg-author ${ehMeu ? 'me' : 'them'}">${esc(m.autor)}</span>
+                        <span class="msg-time">${esc(m.data || '')}</span>
+                    </div>
+                    <div class="msg-text">${esc(m.texto)}</div>
+                </div>`;
+            }).join('')
+            : '<div class="chat-empty">Aguardando atendimento...</div>';
+
+        return `<div class="card-chamado ${temNotif ? 'card-notif' : ''}">
+            <div class="card-top">
+                <div><h2 class="card-title">${esc(c.titulo)}</h2><div class="card-dep">${esc(c.departamento)}</div></div>
+                <span class="badge-status ${concluido ? 'badge-ok' : 'badge-aberto'}">${esc(c.status)}</span>
+            </div>
+            <div class="desc-pessoal"><strong><i class="bi bi-info-circle me-1"></i>Sua solicitação:</strong><br>${esc(c.descricao || 'Sem descrição.')}</div>
+            ${concluido && c.solucao ? `<div class="sol-box"><strong><i class="bi bi-check-circle me-1"></i>Solução aplicada:</strong><br>${esc(c.solucao)}</div>` : ''}
+            <div class="chat-box">${chatHtml}</div>
+            ${!concluido ? `<button onclick="responder('${id}', ${JSON.stringify(msgs).replace(/"/g, '&quot;')})" class="btn-responder">
+                <i class="bi bi-chat-dots"></i> Responder ${temNotif ? '<span class="notif-dot"></span>' : ''}
+            </button>` : ''}
+        </div>`;
+    }
+
+    function render() {
+        const lista = meusChamados.filter(({ c }) =>
+            tabAtual === 'andamento' ? c.status !== 'Concluído' : c.status === 'Concluído');
+        const cont = document.getElementById('listaChamados');
+        if (!lista.length) {
+            const msg = tabAtual === 'andamento'
+                ? 'Você não tem chamados em andamento. Clique em "Abrir novo chamado".'
+                : 'Você ainda não tem chamados finalizados.';
+            cont.innerHTML = `<div class="empty-state"><i class="bi bi-inbox"></i>${msg}</div>`;
+            return;
+        }
+        cont.innerHTML = lista.map(({ id, c }) => cardHtml(id, c)).join('');
+    }
+
+    window.trocarTab = (tab, el) => {
+        tabAtual = tab;
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        render();
+    };
+
+    window.toggleForm = () => {
+        document.getElementById('formPanel').classList.toggle('open');
+    };
+
+    // ===== Responder no chat (dono acrescenta mensagem) =====
+    window.responder = async (id, msgsAtuais) => {
+        const txt = prompt('Sua mensagem:');
+        if (!txt) return;
+        const agora = new Date().toLocaleString('pt-BR');
+        const novas = (msgsAtuais || []).map(m => ({ ...m, lido: true }));
+        novas.push({ autor: perfil.nome, texto: txt, data: agora, lido: false });
+        try {
+            await updateDoc(doc(db, 'chamados', id), { mensagens: novas });
+        } catch (e) {
+            console.error('[painel] falha ao responder', e);
+            alert('Não foi possível enviar a mensagem.');
+        }
+    };
+
+    // ===== Abrir novo chamado =====
+    const alertForm = document.getElementById('alertForm');
+    const mostrarAlerta = (msg, tipo) => {
+        alertForm.className = 'alert-box ' + (tipo === 'ok' ? 'alert-ok' : 'alert-erro');
+        alertForm.textContent = msg;
+        alertForm.style.display = 'block';
+    };
+
+    document.getElementById('formChamado').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btnRegistrar');
+        alertForm.style.display = 'none';
+
+        const departamento = document.getElementById('departamento').value;
+        const titulo = document.getElementById('titulo').value;
+        const descricao = document.getElementById('descricao').value.trim();
+        const urgencia = document.querySelector('input[name="urgencia"]:checked').value;
+
+        if (!departamento || !titulo || !descricao) {
+            mostrarAlerta('Preencha todos os campos do chamado.', 'erro');
+            return;
+        }
+
+        btn.disabled = true; btn.innerText = 'Registrando...';
+        try {
+            await addDoc(collection(db, 'chamados'), {
+                ownerUid: perfil.uid,
+                nome: perfil.nome,
+                sobrenome: perfil.sobrenome,
+                departamento, titulo, descricao, urgencia,
+                status: 'Aberto',
+                dataCriacao: serverTimestamp(),
+                mensagens: []
+            });
+            document.getElementById('formChamado').reset();
+            document.getElementById('formPanel').classList.remove('open');
+            tabAtual = 'andamento';
+            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'andamento'));
+        } catch (err) {
+            console.error('[painel] falha ao abrir chamado', err);
+            mostrarAlerta('Não foi possível registrar o chamado. Tente novamente.', 'erro');
+        } finally {
+            btn.disabled = false; btn.innerText = 'Registrar chamado';
+        }
+    };
+</script>
+</body>
+</html>
