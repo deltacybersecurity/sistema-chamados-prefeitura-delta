@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Delta Cyber Chamados">
+  <title>Delta Cyber Chamados</title>
+  <defs>
+    <linearGradient id="dccShield" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#7c7bf5"/>
+    </linearGradient>
+  </defs>
+  <!-- Escudo -->
+  <path d="M32 6 L54 15 V33 C54 46 44 55 32 59 C20 55 10 46 10 33 V15 Z" fill="url(#dccShield)"/>
+  <!-- Delta (triangulo) -->
+  <path d="M32 20 L43 40 H21 Z" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linejoin="round"/>
+  <!-- Base / pulso de chamado -->
+  <path d="M27 40 H37" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- No / apice -->
+  <circle cx="32" cy="20" r="2.4" fill="#ffffff"/>
+</svg>

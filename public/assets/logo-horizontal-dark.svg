@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 64" role="img" aria-label="Delta Cyber Chamados">
+  <title>Delta Cyber Chamados</title>
+  <defs>
+    <linearGradient id="lgD" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6366f1"/>
+      <stop offset="1" stop-color="#a5a4fb"/>
+    </linearGradient>
+  </defs>
+  <path d="M32 6 L54 15 V33 C54 46 44 55 32 59 C20 55 10 46 10 33 V15 Z" fill="url(#lgD)"/>
+  <path d="M32 20 L43 40 H21 Z" fill="none" stroke="#0d1017" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M27 40 H37" fill="none" stroke="#0d1017" stroke-width="3.2" stroke-linecap="round"/>
+  <circle cx="32" cy="20" r="2.4" fill="#0d1017"/>
+  <text x="72" y="34" font-family="Inter, system-ui, Arial, sans-serif" font-size="20" font-weight="800" letter-spacing="-0.5" fill="#f1f3f6">Delta Cyber</text>
+  <text x="72.5" y="50" font-family="Inter, system-ui, Arial, sans-serif" font-size="10.5" font-weight="600" letter-spacing="2.4" fill="#99a1ad">CHAMADOS</text>
+</svg>

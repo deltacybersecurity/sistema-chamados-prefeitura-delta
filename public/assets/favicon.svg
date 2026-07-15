@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Delta Cyber Chamados">
+  <title>Delta Cyber Chamados</title>
+  <defs>
+    <linearGradient id="fav" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#7c7bf5"/>
+    </linearGradient>
+  </defs>
+  <!-- Fundo arredondado para nitidez em tamanho pequeno -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#fav)"/>
+  <!-- Escudo em contorno claro -->
+  <path d="M32 12 L48 19 V33 C48 42 41 48 32 51 C23 48 16 42 16 33 V19 Z" fill="rgba(255,255,255,.12)" stroke="#ffffff" stroke-width="1.5"/>
+  <!-- Delta -->
+  <path d="M32 23 L41 39 H23 Z" fill="none" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M28 39 H36" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+</svg>
