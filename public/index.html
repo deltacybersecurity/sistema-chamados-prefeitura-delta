@@ -219,7 +219,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCpXcAHwayq8AN3VR7Sj7VYteAwSluKovo",
@@ -231,6 +231,8 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        // Sessão só dura enquanto a aba/navegador estiver aberto (some ao fechar).
+        setPersistence(auth, browserSessionPersistence).catch(e => console.error('[auth] falha ao definir persistência', e));
 
         const btn = document.getElementById('btnEntrar');
         const msgBox = document.getElementById('msgBox');

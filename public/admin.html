@@ -541,11 +541,13 @@ updateClock();setInterval(updateClock,10000);
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import{getFirestore,collection,onSnapshot,query,orderBy,doc,updateDoc,serverTimestamp,getDoc,getDocs,setDoc,where,deleteDoc}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import{getAuth,onAuthStateChanged,signOut,sendPasswordResetEmail}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import{getAuth,onAuthStateChanged,signOut,sendPasswordResetEmail,setPersistence,browserSessionPersistence}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 const app=initializeApp({apiKey:"AIzaSyCpXcAHwayq8AN3VR7Sj7VYteAwSluKovo",authDomain:"sistema-chamados-c3e61.firebaseapp.com",projectId:"sistema-chamados-c3e61",storageBucket:"sistema-chamados-c3e61.firebasestorage.app",appId:"1:782902435377:web:937600794bd6b7c0397f10"});
 const db=getFirestore(app);
 const auth=getAuth(app);
+// Sessão só dura enquanto a aba/navegador estiver aberto (some ao fechar).
+setPersistence(auth,browserSessionPersistence).catch(e=>console.error('[auth] falha ao definir persistência',e));
 let tNome=null;                     // nome de exibição do técnico logado (definido após autenticar)
 let tUid=null;                      // uid do técnico logado (usado para "Ver como usuário")
 let idEmFoco="";let visaoAtual="Dashboard";let todosOsChamados=[];let usuariosTodos=[];let resetsPendentes=[];
