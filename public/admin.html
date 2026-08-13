@@ -262,11 +262,14 @@
             .dash-row{grid-template-columns:1fr 1fr;}
             .dash-bottom{grid-template-columns:1fr;}
         }
+        .sidebar-backdrop{display:none;}
         @media(max-width:768px){
             :root{--sidebar-w:0px;}
             .sidebar{transform:translateX(-100%);transition:transform .3s;width:240px;}
-            .sidebar.open{transform:translateX(0);}
+            .sidebar.open{transform:translateX(0);box-shadow:var(--shadow);}
             .main-wrap{margin-left:0;}
+            .sidebar-backdrop{display:block;position:fixed;inset:var(--topbar-h) 0 0 0;background:rgba(0,0,0,.45);z-index:990;opacity:0;pointer-events:none;transition:opacity .3s;}
+            .sidebar-backdrop.show{opacity:1;pointer-events:auto;}
         }
     </style>
 </head>
@@ -337,6 +340,7 @@
         <button onclick="sair()" class="adm-btn adm-btn-danger" style="width:100%;justify-content:center;"><i class="bi bi-box-arrow-right"></i> Sair</button>
     </div>
 </aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
 <!-- MAIN -->
 <div class="main-wrap">
@@ -522,13 +526,30 @@
 /* Minimizar / expandir barra lateral */
 (function(){
     const btn=document.getElementById('sidebarToggle');
-    function syncTitle(){btn.title=document.documentElement.classList.contains('sidebar-mini')?'Expandir menu':'Minimizar menu';}
-    syncTitle();
+    const sidebar=document.getElementById('sidebar');
+    const backdrop=document.getElementById('sidebarBackdrop');
+    const html=document.documentElement;
+    const mq=window.matchMedia('(max-width:768px)');
+    const isMobile=()=>mq.matches;
+    function syncTitle(){btn.title=html.classList.contains('sidebar-mini')?'Expandir menu':'Minimizar menu';}
+    function drawer(open){sidebar.classList.toggle('open',open);backdrop.classList.toggle('show',open);}
     btn.addEventListener('click',()=>{
-        const on=document.documentElement.classList.toggle('sidebar-mini');
+        // No mobile a sidebar é um drawer (abre/fecha); no desktop, minimiza/expande.
+        if(isMobile()){drawer(!sidebar.classList.contains('open'));return;}
+        const on=html.classList.toggle('sidebar-mini');
         localStorage.setItem('sidebarMini',on?'1':'0');
         syncTitle();
     });
+    backdrop.addEventListener('click',()=>drawer(false));
+    sidebar.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>{if(isMobile())drawer(false);}));
+    // Mantém o estado coerente ao alternar mobile/desktop: mobile mostra o menu completo (ignora o mini salvo).
+    function applyMode(){
+        if(isMobile()){html.classList.remove('sidebar-mini');}
+        else{drawer(false);if(localStorage.getItem('sidebarMini')==='1')html.classList.add('sidebar-mini');}
+        syncTitle();
+    }
+    mq.addEventListener('change',applyMode);
+    applyMode();
 })();
 function updateClock(){
     const n=new Date();
