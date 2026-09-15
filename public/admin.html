@@ -559,10 +559,6 @@
         </div>
         <div id="perfilDados"></div>
         <div class="section-head" style="margin-top:18px;">
-            <div class="section-title"><i class="bi bi-shield-lock"></i> Redefinição de senha</div>
-        </div>
-        <div id="perfilReset"></div>
-        <div class="section-head" style="margin-top:18px;">
             <div class="section-title"><i class="bi bi-list-task"></i> Chamados do usuário</div>
         </div>
         <div id="gridPerfilChamados" class="grid-chamados"></div>
@@ -693,7 +689,7 @@ updateClock();setInterval(updateClock,10000);
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import{getFirestore,collection,onSnapshot,query,orderBy,doc,updateDoc,serverTimestamp,getDoc,getDocs,setDoc,where,deleteDoc}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import{getAuth,onAuthStateChanged,signOut,sendPasswordResetEmail,setPersistence,browserSessionPersistence}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import{getAuth,onAuthStateChanged,signOut,setPersistence,browserSessionPersistence}from"https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import{adicionarArquivos,renderPreview,subirAnexos,renderAnexosEnviados}from"./js/anexos.js";
 
 const app=initializeApp({apiKey:"AIzaSyCpXcAHwayq8AN3VR7Sj7VYteAwSluKovo",authDomain:"sistema-chamados-c3e61.firebaseapp.com",projectId:"sistema-chamados-c3e61",storageBucket:"sistema-chamados-c3e61.firebasestorage.app",appId:"1:782902435377:web:937600794bd6b7c0397f10"});
@@ -703,7 +699,7 @@ const auth=getAuth(app);
 setPersistence(auth,browserSessionPersistence).catch(e=>console.error('[auth] falha ao definir persistência',e));
 let tNome=null;                     // nome de exibição do técnico logado (definido após autenticar)
 let tUid=null;                      // uid do técnico logado (usado para "Ver como usuário")
-let idEmFoco="";let visaoAtual="Dashboard";let todosOsChamados=[];let usuariosTodos=[];let resetsPendentes=[];
+let idEmFoco="";let visaoAtual="Dashboard";let todosOsChamados=[];let usuariosTodos=[];
 
 /* ===== PRESENÇA: técnicos online/offline ===== */
 const ONLINE_WINDOW=60000;          // considera online se visto nos últimos 60s
@@ -906,7 +902,6 @@ function statusBadge(status){
 function renderCadastros(){
     const grid=document.getElementById('gridCadastros');if(!grid)return;
     grid.innerHTML=usuariosTodos.length?usuariosTodos.map(({id,u})=>{
-        const temReset=resetsPendentes.some(r=>r.r.email===u.email);
         return `<div class="card-chamado" onclick="window.abrirPerfilUsuario('${id}')" style="cursor:pointer;">
             <div class="card-summary">
                 <div class="card-head-row"><div class="card-titulo">${esc(u.nome)} ${esc(u.sobrenome)}</div>${statusBadge(u.status)}</div>
@@ -915,7 +910,6 @@ function renderCadastros(){
                     <div class="muted"><i class="bi bi-telephone"></i> ${esc(u.telefone)}</div>
                     <div class="muted"><i class="bi bi-building"></i> ${esc(u.setor)}</div>
                     <div class="muted"><i class="bi bi-person-badge"></i> ${esc(u.cargo)}</div>
-                    ${temReset?'<div><span class="urg-chip alta"><i class="bi bi-key-fill"></i> Pediu redefinição de senha</span></div>':''}
                 </div>
             </div>
         </div>`;
@@ -942,25 +936,11 @@ function renderSolicitacoes(){
                 </div></div>
             </div>
         </div>`).join('');
-    const cardsReset=resetsPendentes.map(({id,r})=>`
-        <div class="card-chamado">
-            <div class="card-summary">
-                <div class="card-head-row"><div class="card-titulo"><i class="bi bi-key-fill"></i> Redefinir senha</div>${statusBadge('pendente')}</div>
-                <div class="card-meta">
-                    <div><i class="bi bi-envelope"></i> ${esc(r.email)}</div>
-                    <div class="muted">Solicitado em: ${r.dataSolicitacao?.toDate?.().toLocaleString('pt-BR')||'—'}</div>
-                </div>
-                <div class="card-actions"><div class="act-row">
-                    <button class="act act-primary" onclick="window.aprovarReset('${id}','${esc(r.email)}')">Aprovar e enviar e-mail</button>
-                </div></div>
-            </div>
-        </div>`).join('');
-    const html=cardsCadastro+cardsReset;
-    grid.innerHTML=html||`<div class="empty-state"><i class="bi bi-check2-all"></i><p>Nenhuma solicitação pendente.</p></div>`;
+    grid.innerHTML=cardsCadastro||`<div class="empty-state"><i class="bi bi-check2-all"></i><p>Nenhuma solicitação pendente.</p></div>`;
 }
 
 function atualizarBadgeSolicitacoes(){
-    const total=usuariosTodos.filter(({u})=>u.status==='pendente').length+resetsPendentes.length;
+    const total=usuariosTodos.filter(({u})=>u.status==='pendente').length;
     const b1=document.getElementById('nb-cadastros');if(b1)b1.textContent=total;
     const b2=document.getElementById('nb-solicitacoes');if(b2)b2.textContent=total;
 }
@@ -993,43 +973,7 @@ window.rejeitarCadastro=async(uid)=>{
     catch(e){console.error('[cadastros] falha ao rejeitar',e);alert('Não foi possível rejeitar (verifique as regras do Firestore).');}
 };
 
-// ===== Solicitações de redefinição de senha =====
-function assinarResetSenha(){
-    onSnapshot(query(collection(db,'resetSenha'),where('status','==','pendente')),snap=>{
-        resetsPendentes=snap.docs.map(d=>({id:d.id,r:d.data()}));
-        atualizarBadgeSolicitacoes();
-        if(visaoAtual==='Cadastros'){renderCadastros();renderSolicitacoes();}
-        if(visaoAtual==='Perfil'&&idEmFoco)renderPerfilReset(idEmFoco);
-    },err=>console.error('[reset-senha] FALHA ao ler (regras do Firestore?)',err));
-}
-
-window.aprovarReset=async(resetId,email)=>{
-    if(!confirm(`Confirma que já validou a identidade de ${email} por contato direto? Isso vai enviar o e-mail oficial de redefinição de senha do Firebase para essa pessoa.`))return;
-    try{
-        await sendPasswordResetEmail(auth,email);
-        await updateDoc(doc(db,'resetSenha',resetId),{status:'aprovado',dataAprovacao:serverTimestamp()});
-        alert('E-mail de redefinição enviado para '+email+'.');
-    }catch(e){
-        console.error('[reset-senha] falha ao aprovar',e);
-        alert('Não foi possível enviar o e-mail de redefinição.');
-    }
-};
-
-// ===== Perfil do usuário (dados + chamados + reset de senha) =====
-function renderPerfilReset(uid){
-    const perfil=usuariosTodos.find(x=>x.id===uid);if(!perfil)return;
-    const cont=document.getElementById('perfilReset');if(!cont)return;
-    const pedido=resetsPendentes.find(r=>r.r.email===perfil.u.email);
-    cont.innerHTML=pedido?`<div class="card-chamado">
-        <div class="card-summary">
-            <div class="card-head-row"><div class="card-titulo"><i class="bi bi-key-fill"></i> Solicitação pendente</div>${statusBadge('pendente')}</div>
-            <div class="card-meta"><div class="muted">Solicitado em: ${pedido.r.dataSolicitacao?.toDate?.().toLocaleString('pt-BR')||'—'}</div></div>
-            <div class="card-actions"><div class="act-row">
-                <button class="act act-primary" onclick="window.aprovarReset('${pedido.id}','${esc(perfil.u.email)}')">Aprovar e enviar e-mail</button>
-            </div></div>
-        </div>
-    </div>`:`<div class="empty-state"><i class="bi bi-shield-check"></i><p>Nenhuma solicitação de redefinição de senha pendente.</p></div>`;
-}
+// ===== Perfil do usuário (dados + chamados) =====
 
 window.abrirPerfilUsuario=(uid)=>{
     idEmFoco=uid;
@@ -1053,8 +997,6 @@ window.abrirPerfilUsuario=(uid)=>{
             </div>
         </div>
     </div>`;
-
-    renderPerfilReset(uid);
 
     const chamadosDoUsuario=todosOsChamados.filter(({c})=>c.ownerUid===uid);
     const gridPerfil=document.getElementById('gridPerfilChamados');
@@ -1424,9 +1366,6 @@ function iniciarPainel(){
 
     // Cadastros de solicitantes aguardando aprovação
     assinarCadastros();
-
-    // Solicitações de redefinição de senha
-    assinarResetSenha();
 
     // Tela inicial é sempre o Dashboard
     window.trocarVisao('Dashboard', document.querySelector('[data-filtro="Dashboard"]'));
