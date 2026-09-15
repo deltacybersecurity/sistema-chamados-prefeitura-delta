@@ -254,6 +254,8 @@
         .act-fim:hover{background:var(--green);color:#fff;}
         .act-transf{background:transparent;border-color:var(--border-strong);color:var(--text-muted);}
         .act-transf:hover{border-color:var(--text-muted);color:var(--text);}
+        .act-danger{background:var(--red-soft);border-color:var(--red);color:var(--red);}
+        .act-danger:hover{background:var(--red);color:#fff;}
 
         /* Anexos (fotos/arquivos) */
         .anexo-actions{display:flex;gap:8px;margin-bottom:8px;}
@@ -834,6 +836,7 @@ function buildCardHtml(c,id){
                     <button class="act act-primary" onclick="event.stopPropagation();window.abrirChat('${c.ownerUid}')"><i class="bi bi-chat-dots-fill"></i> Abrir chat</button>
                 </div>
                 ${(!concluido&&resp===tNome)?`<button class="act act-transf" onclick="event.stopPropagation();window.abrirModalTransferir('${id}')"><i class="bi bi-arrow-left-right"></i> Transferir</button>`:''}
+                ${!concluido?`<button class="act act-danger" onclick="event.stopPropagation();window.excluirChamado('${id}')"><i class="bi bi-trash3"></i> Excluir chamado</button>`:''}
             </div>
         </div>
     </div>`;
@@ -863,7 +866,8 @@ function renderChamados(filtro){
 
 function assinarChamados(){
 onSnapshot(query(collection(db,"chamados"),orderBy("dataCriacao","desc")),snapshot=>{
-    todosOsChamados=snapshot.docs.map(d=>({id:d.id,c:d.data()}));
+    // Chamados excluídos (exclusão lógica) permanecem no banco para auditoria, mas somem de todas as telas e contadores.
+    todosOsChamados=snapshot.docs.map(d=>({id:d.id,c:d.data()})).filter(({c})=>!c.excluido);
     const abertos   = todosOsChamados.filter(({c})=>!c.tecnicoResponsavel && c.status!=="Concluído").length;
     const pendentes  = todosOsChamados.filter(({c})=>c.status!=="Concluído").length;
     const minha      = todosOsChamados.filter(({c})=>c.tecnicoResponsavel===tNome).length;
@@ -1015,6 +1019,20 @@ window.excluirUsuario=async(uid,nomeCompleto)=>{
     }catch(e){
         console.error('[cadastros] falha ao excluir usuário',e);
         alert('Não foi possível excluir (verifique as regras do Firestore).');
+    }
+};
+
+// Exclusão lógica de chamado: marca como excluído (o doc continua no banco) para preservar o histórico auditável.
+window.excluirChamado=async(id)=>{
+    const alvo=todosOsChamados.find(x=>x.id===id);
+    if(alvo&&alvo.c.status==='Concluído'){alert('Chamados concluídos não podem ser excluídos — ficam no histórico.');return;}
+    const titulo=alvo?alvo.c.titulo:'este chamado';
+    if(!confirm(`Excluir o chamado "${titulo}"? Ele some do painel, mas continua salvo no banco para auditoria.`))return;
+    try{
+        await updateDoc(doc(db,'chamados',id),{excluido:true,excluidoPor:tNome,dataExclusao:serverTimestamp()});
+    }catch(e){
+        console.error('[chamados] falha ao excluir',e);
+        alert('Não foi possível excluir o chamado (verifique as regras do Firestore).');
     }
 };
 
