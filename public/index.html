@@ -5,22 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suporte Técnico · Prefeitura de Delta</title>
 
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 
     <style>
         :root {
-            /* Cores originais do sistema (accent indigo) */
-            --accent: #4f46e5; --accent-hover: #4338ca;
-            --accent-ring: rgba(79,70,229,.35); --accent-soft: #a5b4fc;
+            /* Accent monocromático prata (identidade Delta) */
+            --accent: #d7dbe1; --accent-hover: #ffffff;
+            --accent-ring: rgba(215,219,225,.30); --accent-soft: #c4c9d2;
             --red: #f87171; --red-soft: rgba(248,113,113,.14);
             --amber: #fbbf24; --amber-soft: rgba(251,191,36,.14);
             --radius: 16px; --radius-sm: 10px;
 
             /* Paleta de vidro da faixa de login (sempre escura, sobre a foto) */
-            --glass: rgba(14,17,24,.86);
+            --glass: rgba(18,18,20,.88);
             --glass-border: rgba(255,255,255,.09);
             --on-glass: #f2f4f8;
             --on-glass-muted: rgba(233,237,244,.68);
@@ -31,7 +31,7 @@
         * { box-sizing: border-box; }
         html, body { height: 100%; }
         body {
-            margin: 0; font-family: 'Inter', sans-serif; color: var(--on-glass);
+            margin: 0; font-family: 'Manrope', sans-serif; -webkit-font-smoothing: antialiased; color: var(--on-glass);
             background-color: #0b0d11;
         }
         /* Camada de fundo dedicada: recebe a foto + desfoque leve, sem borrar a faixa de login.
@@ -39,23 +39,23 @@
            #0b0d11 é o fallback caso a imagem não carregue. */
         .auth-bg {
             position: fixed; inset: 0; z-index: -1;
-            background-color: #0b0d11;
+            background-color: #0b0b0c;
             background-image:
-                radial-gradient(130% 120% at 32% 42%, transparent 52%, rgba(6,8,12,.42) 100%),
-                linear-gradient(90deg, rgba(8,10,14,.42) 0%, rgba(8,10,14,.10) 42%, rgba(8,10,14,.32) 100%),
+                radial-gradient(130% 120% at 32% 42%, transparent 52%, rgba(8,8,9,.44) 100%),
+                linear-gradient(90deg, rgba(10,10,11,.44) 0%, rgba(10,10,11,.10) 42%, rgba(10,10,11,.34) 100%),
                 url('img/imgpontedelta.jpeg');
             background-size: cover; background-position: center;
-            filter: blur(4px); transform: scale(1.06);
+            filter: blur(4px) saturate(.55) brightness(.88); transform: scale(1.06);
         }
 
         /* ===== Card de login central, sobre a foto desfocada ===== */
         .auth-shell { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 20px; }
         .auth-card {
             position: relative; width: 100%; max-width: 460px; text-align: center;
-            /* vidro escuro translúcido + brilho indigo sutil no topo = identidade da marca */
+            /* vidro grafite translúcido + brilho prata sutil no topo = identidade da marca */
             background:
-                radial-gradient(560px 260px at 50% -12%, rgba(99,102,241,.20), transparent 62%),
-                linear-gradient(180deg, rgba(17,20,29,.84) 0%, rgba(11,13,20,.88) 100%);
+                radial-gradient(560px 260px at 50% -12%, rgba(203,208,217,.16), transparent 62%),
+                linear-gradient(180deg, rgba(24,24,26,.85) 0%, rgba(14,14,15,.90) 100%);
             -webkit-backdrop-filter: blur(20px) saturate(115%); backdrop-filter: blur(20px) saturate(115%);
             border: 1px solid var(--glass-border);
             border-radius: 22px;
@@ -63,8 +63,8 @@
             padding: 44px 44px 34px;
         }
 
-        .brand-logo { margin-bottom: 20px; }
-        .brand-logo img { width: 62px; height: 62px; filter: drop-shadow(0 8px 18px rgba(79,70,229,.45)); }
+        .brand-logo { margin-bottom: 12px; }
+        .brand-logo img { width: 232px; max-width: 82%; height: auto; filter: drop-shadow(0 12px 26px rgba(0,0,0,.55)); }
 
         .login-title { font-weight: 800; font-size: 1.9rem; color: #fff; margin: 0 0 6px; letter-spacing: -.02em; }
         .login-subtitle { font-size: .88rem; color: var(--on-glass-muted); font-weight: 500; margin: 0 0 26px; line-height: 1.5; }
@@ -88,12 +88,12 @@
         .toggle-eye:hover { color: #fff; }
         .btn-logar {
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            background: linear-gradient(180deg, #6366f1 0%, var(--accent) 100%);
-            color: #fff; border: none; padding: 13px; width: 100%;
+            background: linear-gradient(180deg, #f6f7f9 0%, #dfe3e9 100%);
+            color: #14171c; border: none; padding: 13px; width: 100%;
             border-radius: var(--radius-sm); font-weight: 700; font-size: .92rem; margin-top: 8px; cursor: pointer;
-            letter-spacing: .01em; transition: .2s ease; box-shadow: 0 12px 28px rgba(79,70,229,.38);
+            letter-spacing: .01em; transition: .2s ease; box-shadow: 0 12px 28px rgba(0,0,0,.42);
         }
-        .btn-logar:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); box-shadow: 0 16px 34px rgba(79,70,229,.5); }
+        .btn-logar:hover:not(:disabled) { filter: brightness(1.04); transform: translateY(-1px); box-shadow: 0 16px 34px rgba(0,0,0,.5); }
         .btn-logar:disabled { opacity: .65; cursor: not-allowed; }
         #msgBox { padding: 10px; border-radius: var(--radius-sm); margin-top: 16px; font-size: .8rem; font-weight: 600; display: none; }
         #msgBox.erro { background: var(--red-soft); color: var(--red); border: 1px solid rgba(248,113,113,.5); }
@@ -130,7 +130,7 @@
         .cookie-text { margin: 0 0 14px 0; font-size: .82rem; line-height: 1.5; color: var(--on-glass-muted); }
         .cookie-text strong { color: var(--accent-soft); }
         .btn-cookie {
-            background: var(--accent); color: #fff; border: none; padding: 9px 16px;
+            background: var(--accent); color: #14171c; border: none; padding: 9px 16px;
             border-radius: var(--radius-sm); font-weight: 600; font-size: .85rem; cursor: pointer;
             transition: .2s ease;
         }
@@ -148,7 +148,7 @@
         <!-- Card de login central (vidro escuro sobre a foto desfocada) -->
         <main class="auth-card">
                 <div class="brand-logo">
-                    <img src="assets/logo-icon.svg" alt="Delta Cyber Security">
+                    <img src="assets/logo-delta-full.png" alt="Delta Cyber Security">
                 </div>
 
                 <h1 class="login-title">Suporte Técnico</h1>
@@ -182,7 +182,7 @@
                     Ainda não tem cadastro? <a href="cadastro.html">Criar cadastro</a>
                 </div>
 
-                <div class="footer-text">Delta Cyber Security</div>
+                <div class="footer-text">Delta Cyber Security · CNPJ 64.880.234/0001-53</div>
         </main>
     </div>
 
