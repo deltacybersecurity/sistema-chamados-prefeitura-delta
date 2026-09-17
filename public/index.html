@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="icon" type="image/png" href="assets/logo-delta-symbol.png">
 
     <style>
         :root {
@@ -27,6 +27,13 @@
             --on-glass-soft: rgba(233,237,244,.40);
             --field-bg: rgba(255,255,255,.045);
             --field-border: rgba(255,255,255,.14);
+
+            /* Card de login claro (creme) — dá contraste à logo metálica; usado só nesta tela.
+               Alpha reduzido (.72) deixa o card mais translúcido: a foto de fundo vaza um pouco mais. */
+            --cream-1: rgba(246,239,221,.72); --cream-2: rgba(236,226,201,.72);
+            --ink: #20222a; --ink-muted: #5c5f68; --ink-soft: #9a9384;
+            --field-light-bg: #fffdf7; --field-light-border: rgba(32,34,42,.16);
+            --field-light-ring: rgba(32,34,42,.12);
         }
         * { box-sizing: border-box; }
         html, body { height: 100%; }
@@ -50,72 +57,139 @@
 
         /* ===== Card de login central, sobre a foto desfocada ===== */
         .auth-shell { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 32px 20px; }
+        /* ===== Card de login: duas colunas (logo à esquerda, formulário à direita) =====
+           Fundo creme para dar contraste à logo metálica; assenta sobre a foto desfocada. */
         .auth-card {
-            position: relative; width: 100%; max-width: 460px; text-align: center;
-            /* vidro grafite translúcido + brilho prata sutil no topo = identidade da marca */
-            background:
-                radial-gradient(560px 260px at 50% -12%, rgba(203,208,217,.16), transparent 62%),
-                linear-gradient(180deg, rgba(24,24,26,.85) 0%, rgba(14,14,15,.90) 100%);
-            -webkit-backdrop-filter: blur(20px) saturate(115%); backdrop-filter: blur(20px) saturate(115%);
-            border: 1px solid var(--glass-border);
+            position: relative; width: 100%; max-width: 880px;
+            display: flex; align-items: stretch; overflow: hidden;
+            /* Creme translúcido + desfoque de fundo = vidro fosco, deixando a foto vazar de leve */
+            background: linear-gradient(180deg, var(--cream-1) 0%, var(--cream-2) 100%);
+            -webkit-backdrop-filter: blur(16px) saturate(120%); backdrop-filter: blur(16px) saturate(120%);
+            border: 1px solid rgba(32,34,42,.10);
             border-radius: 22px;
-            box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
-            padding: 44px 44px 34px;
+            box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.55);
         }
 
-        .brand-logo { margin-bottom: 12px; }
-        .brand-logo img { width: 232px; max-width: 82%; height: auto; filter: drop-shadow(0 12px 26px rgba(0,0,0,.55)); }
+        /* Botão que alterna a cor do card entre creme (padrão) e escuro. Fica no canto do card. */
+        .card-theme-toggle {
+            position: absolute; top: 14px; right: 14px; z-index: 3;
+            width: 34px; height: 34px; border-radius: 50%;
+            border: 1px solid rgba(32,34,42,.16); background: rgba(255,255,255,.55);
+            color: var(--ink-muted); cursor: pointer; display: grid; place-items: center;
+            font-size: .95rem; transition: color .2s ease, background .2s ease;
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+        }
+        .card-theme-toggle:hover { color: var(--ink); background: rgba(255,255,255,.82); }
 
-        .login-title { font-weight: 800; font-size: 1.9rem; color: #fff; margin: 0 0 6px; letter-spacing: -.02em; }
-        .login-subtitle { font-size: .88rem; color: var(--on-glass-muted); font-weight: 500; margin: 0 0 26px; line-height: 1.5; }
+        /* Coluna esquerda: vitrine da logo (maior, sempre proporcional) */
+        .auth-visual {
+            flex: 0 0 42%;
+            display: flex; align-items: center; justify-content: center;
+            padding: 40px 30px;
+            background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.55), transparent 70%);
+            border-right: 1px solid rgba(32,34,42,.10);
+        }
+        .auth-visual img { width: 100%; max-width: 300px; height: auto; filter: drop-shadow(0 10px 22px rgba(0,0,0,.25)); }
+
+        /* Coluna direita: formulário */
+        .auth-form { flex: 1 1 auto; padding: 44px 42px 34px; text-align: left; }
+
+        .login-title { font-weight: 800; font-size: 1.9rem; color: var(--ink); margin: 0 0 6px; letter-spacing: -.02em; }
+        .login-subtitle { font-size: .88rem; color: var(--ink-muted); font-weight: 500; margin: 0 0 26px; line-height: 1.5; }
 
         .field { margin-bottom: 16px; text-align: left; }
-        .field-label { color: var(--on-glass-muted); font-weight: 600; font-size: .78rem; display: block; margin-bottom: 6px; }
+        .field-label { color: var(--ink-muted); font-weight: 600; font-size: .78rem; display: block; margin-bottom: 6px; }
         .input {
-            width: 100%; background: var(--field-bg); border: 1px solid var(--field-border); color: #fff;
+            width: 100%; background: var(--field-light-bg); border: 1px solid var(--field-light-border); color: var(--ink);
             padding: 12px 13px; font-size: .9rem; border-radius: var(--radius-sm); font-family: inherit;
             transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
         }
-        .input::placeholder { color: var(--on-glass-soft); }
-        .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); background: rgba(255,255,255,.10); }
+        .input::placeholder { color: var(--ink-soft); }
+        .input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px var(--field-light-ring); background: #fff; }
         .pass-wrap { position: relative; }
         .pass-wrap .input { padding-right: 44px; }
         .toggle-eye {
             position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px;
-            border-radius: 8px; border: none; background: transparent; color: var(--on-glass-muted); cursor: pointer;
+            border-radius: 8px; border: none; background: transparent; color: var(--ink-muted); cursor: pointer;
             display: grid; place-items: center; font-size: 1rem;
         }
-        .toggle-eye:hover { color: #fff; }
+        .toggle-eye:hover { color: var(--ink); }
+        /* Botão grafite escuro: contrasta com o creme e mantém a identidade da marca */
         .btn-logar {
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            background: linear-gradient(180deg, #f6f7f9 0%, #dfe3e9 100%);
-            color: #14171c; border: none; padding: 13px; width: 100%;
+            background: linear-gradient(180deg, #2b2e35 0%, #17191d 100%);
+            color: #f4f5f7; border: none; padding: 13px; width: 100%;
             border-radius: var(--radius-sm); font-weight: 700; font-size: .92rem; margin-top: 8px; cursor: pointer;
-            letter-spacing: .01em; transition: .2s ease; box-shadow: 0 12px 28px rgba(0,0,0,.42);
+            letter-spacing: .01em; transition: .2s ease; box-shadow: 0 12px 26px rgba(0,0,0,.28);
         }
-        .btn-logar:hover:not(:disabled) { filter: brightness(1.04); transform: translateY(-1px); box-shadow: 0 16px 34px rgba(0,0,0,.5); }
+        .btn-logar:hover:not(:disabled) { filter: brightness(1.12); transform: translateY(-1px); box-shadow: 0 16px 32px rgba(0,0,0,.34); }
         .btn-logar:disabled { opacity: .65; cursor: not-allowed; }
         #msgBox { padding: 10px; border-radius: var(--radius-sm); margin-top: 16px; font-size: .8rem; font-weight: 600; display: none; }
-        #msgBox.erro { background: var(--red-soft); color: var(--red); border: 1px solid rgba(248,113,113,.5); }
-        #msgBox.aviso { background: var(--amber-soft); color: var(--amber); border: 1px solid rgba(251,191,36,.5); }
+        #msgBox.erro { background: rgba(220,38,38,.08); color: #b91c1c; border: 1px solid rgba(220,38,38,.30); }
+        #msgBox.aviso { background: rgba(217,119,6,.10); color: #b45309; border: 1px solid rgba(217,119,6,.30); }
         .notice-card {
             display: flex; align-items: flex-start; gap: 11px;
-            background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
-            border-left: 2px solid var(--amber); color: var(--on-glass-muted);
+            background: rgba(201,144,42,.10); border: 1px solid rgba(201,144,42,.24);
+            border-left: 2px solid #c9902a; color: var(--ink-muted);
             border-radius: 10px; padding: 12px 14px; margin-bottom: 22px;
             font-size: .78rem; line-height: 1.55; text-align: left;
         }
-        .notice-card i { color: var(--amber); font-size: .95rem; margin-top: 1px; flex-shrink: 0; }
-        .notice-card strong { color: #fff; font-weight: 700; }
-        .link-row { margin-top: 20px; font-size: .82rem; color: var(--on-glass-muted); text-align: center; }
-        .link-row a { color: var(--accent-soft); font-weight: 600; text-decoration: none; }
+        .notice-card i { color: #b8801f; font-size: .95rem; margin-top: 1px; flex-shrink: 0; }
+        .notice-card strong { color: var(--ink); font-weight: 700; }
+        .link-row { margin-top: 20px; font-size: .82rem; color: var(--ink-muted); text-align: center; }
+        .link-row a { color: #2b2e35; font-weight: 700; text-decoration: none; }
         .link-row a:hover { text-decoration: underline; }
-        .link-row--sep { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,.07); }
-        .footer-text { margin-top: 22px; font-size: .72rem; color: var(--on-glass-soft); text-align: center; }
+        .link-row--sep { margin-top: 24px; padding-top: 20px; border-top: 1px solid rgba(32,34,42,.12); }
+        .footer-text { margin-top: 22px; font-size: .72rem; color: var(--ink-soft); text-align: center; }
 
-        /* No mobile o card usa quase toda a largura */
-        @media (max-width: 640px) {
-            .auth-card { padding: 34px 24px 28px; border-radius: 18px; }
+        /* ===== Variante ESCURA do card (ativada pelo toggle: body[data-card="dark"]) =====
+           Reaproveita a paleta de vidro escuro (--glass / --on-glass) já usada no banner de cookies.
+           Bloco aditivo: o creme continua sendo o padrão; aqui só sobrescrevemos as cores no modo escuro. */
+        body[data-card="dark"] .auth-card {
+            background: linear-gradient(180deg, rgba(26,27,31,.74) 0%, rgba(16,17,20,.74) 100%);
+            border-color: var(--glass-border);
+            box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
+        }
+        body[data-card="dark"] .auth-visual {
+            background: radial-gradient(120% 120% at 50% 0%, rgba(255,255,255,.06), transparent 70%);
+            border-right-color: var(--glass-border); border-bottom-color: var(--glass-border);
+        }
+        body[data-card="dark"] .login-title { color: var(--on-glass); }
+        body[data-card="dark"] .login-subtitle,
+        body[data-card="dark"] .field-label { color: var(--on-glass-muted); }
+        body[data-card="dark"] .input {
+            background: var(--field-bg); border-color: var(--field-border); color: var(--on-glass);
+        }
+        body[data-card="dark"] .input::placeholder { color: var(--on-glass-soft); }
+        body[data-card="dark"] .input:focus {
+            border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); background: rgba(255,255,255,.06);
+        }
+        body[data-card="dark"] .toggle-eye { color: var(--on-glass-muted); }
+        body[data-card="dark"] .toggle-eye:hover { color: var(--on-glass); }
+        /* Botão Entrar em prata (contrasta com o card escuro, mantendo a identidade Delta) */
+        body[data-card="dark"] .btn-logar {
+            background: linear-gradient(180deg, #e9edf3 0%, #c4c9d2 100%); color: #14171c;
+        }
+        body[data-card="dark"] .notice-card { color: var(--on-glass-muted); }
+        body[data-card="dark"] .notice-card strong { color: var(--on-glass); }
+        body[data-card="dark"] .link-row { color: var(--on-glass-muted); }
+        body[data-card="dark"] .link-row a { color: var(--accent); }
+        body[data-card="dark"] .link-row--sep { border-top-color: var(--glass-border); }
+        body[data-card="dark"] .footer-text { color: var(--on-glass-soft); }
+        body[data-card="dark"] .card-theme-toggle {
+            border-color: var(--glass-border); background: rgba(255,255,255,.06); color: var(--on-glass-muted);
+        }
+        body[data-card="dark"] .card-theme-toggle:hover { color: var(--on-glass); background: rgba(255,255,255,.12); }
+
+        /* No mobile as colunas empilham: logo em cima, formulário embaixo */
+        @media (max-width: 760px) {
+            .auth-card { flex-direction: column; max-width: 460px; }
+            .auth-visual {
+                flex: none; padding: 30px 30px 6px;
+                border-right: none; border-bottom: 1px solid rgba(32,34,42,.10);
+            }
+            .auth-visual img { max-width: 200px; }
+            .auth-form { padding: 26px 26px 26px; }
             .login-title { font-size: 1.7rem; }
         }
 
@@ -145,12 +219,16 @@
     <div class="auth-bg" aria-hidden="true"></div>
 
     <div class="auth-shell">
-        <!-- Card de login central (vidro escuro sobre a foto desfocada) -->
+        <!-- Card de login central: logo à esquerda, formulário à direita (creme sobre a foto desfocada) -->
         <main class="auth-card">
-                <div class="brand-logo">
-                    <img src="assets/logo-delta-full.png" alt="Delta Cyber Security">
+                <button type="button" id="cardThemeToggle" class="card-theme-toggle" title="Mudar cor do card" aria-label="Usar card escuro">
+                    <i class="bi bi-moon-stars" id="cardThemeIcon"></i>
+                </button>
+                <div class="auth-visual">
+                    <img src="assets/logo-delta-full-clean.png" alt="Delta Cyber Security">
                 </div>
 
+                <div class="auth-form">
                 <h1 class="login-title">Suporte Técnico</h1>
                 <p class="login-subtitle">Acesso ao Sistema • informe seu e-mail e senha</p>
 
@@ -183,6 +261,7 @@
                 </div>
 
                 <div class="footer-text">Delta Cyber Security · CNPJ 64.880.234/0001-53</div>
+                </div>
         </main>
     </div>
 
@@ -206,6 +285,32 @@
             btnAceitar.addEventListener('click', () => {
                 localStorage.setItem('delta_cookies_aceitos', 'true');
                 banner.style.display = 'none';
+            });
+        })();
+    </script>
+
+    <script>
+        // Alterna a cor do card de login entre creme (padrão) e escuro, memorizando a escolha.
+        (function () {
+            const KEY = 'delta_login_card';
+            const btn = document.getElementById('cardThemeToggle');
+            const icon = document.getElementById('cardThemeIcon');
+
+            const aplicar = (tema) => {
+                const escuro = tema === 'dark';
+                document.body.dataset.card = escuro ? 'dark' : '';
+                icon.className = escuro ? 'bi bi-sun' : 'bi bi-moon-stars';
+                btn.setAttribute('aria-label', escuro ? 'Usar card claro (creme)' : 'Usar card escuro');
+            };
+
+            let salvo = '';
+            try { salvo = localStorage.getItem(KEY) || ''; } catch (e) {}
+            aplicar(salvo);
+
+            btn.addEventListener('click', () => {
+                const proximo = document.body.dataset.card === 'dark' ? '' : 'dark';
+                try { localStorage.setItem(KEY, proximo); } catch (e) {}
+                aplicar(proximo);
             });
         })();
     </script>
