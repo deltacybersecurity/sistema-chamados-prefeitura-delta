@@ -835,7 +835,7 @@ function buildCardHtml(c,id){
                 <div class="act-row">
                     ${(!concluido&&!resp)?`<button class="act act-fim" onclick="event.stopPropagation();window.capturar('${id}')"><i class="bi bi-hand-index-thumb"></i> Capturar chamado</button>`:''}
                     ${(!concluido&&resp===tNome)?`<button class="act act-fim" onclick="event.stopPropagation();window.abrirModalFinalizar('${id}')"><i class="bi bi-check-circle-fill"></i> Finalizar</button>`:''}
-                    <button class="act act-primary" onclick="event.stopPropagation();window.abrirChat('${c.ownerUid}')"><i class="bi bi-chat-dots-fill"></i> Abrir chat</button>
+                    <button class="act act-primary" onclick="event.stopPropagation();window.abrirChat('${id}')"><i class="bi bi-chat-dots-fill"></i> Abrir chat</button>
                 </div>
                 ${(!concluido&&resp===tNome)?`<button class="act act-transf" onclick="event.stopPropagation();window.abrirModalTransferir('${id}')"><i class="bi bi-arrow-left-right"></i> Transferir</button>`:''}
                 ${!concluido?`<button class="act act-danger" onclick="event.stopPropagation();window.excluirChamado('${id}')"><i class="bi bi-trash3"></i> Excluir chamado</button>`:''}
@@ -1046,7 +1046,7 @@ window.voltarCadastros=()=>{
 window.toggleCard=(card)=>card.classList.toggle('expandido');
 
 // ===== CHATS (visão agregada por perfil / ownerUid) — reaproveita as mensagens de cada chamado =====
-let chatFocoUid=null;
+let chatFocoId=null;   // id do CHAMADO em foco no chat (1 conversa por chamado)
 let arquivosChat=[];
 // Mensagens enviadas de forma otimista (aparecem na hora); guardam o estado
 // "enviando" ou "falhou" até a gravação no Firestore confirmar/ser reenviada.
@@ -1060,24 +1060,26 @@ function nomeDoOwner(uid,fallbackChamado){
 }
 function iniciaisChat(nome){const p=(nome||'').trim().split(/\s+/);return((p[0]?.[0]||'')+(p[1]?.[0]||'')).toUpperCase()||'?';}
 function millisCriacao(c){return c.dataCriacao?.toMillis?.()||0;}
-// chamados de um perfil em ordem cronológica (mais antigo -> mais novo)
-function chamadosDoOwner(uid){return todosOsChamados.filter(({c})=>c.ownerUid===uid).slice().sort((a,b)=>millisCriacao(a.c)-millisCriacao(b.c));}
 // "mensagem do usuário" = autor bate com o nome do solicitante do chamado (mensagens de técnicos têm o nome do técnico).
 function ehDoUsuario(m,c){return (m.autor||'').trim().toLowerCase()===(c.nome||'').trim().toLowerCase();}
 function naoLidasChamado(c){return (c.mensagens||[]).filter(m=>ehDoUsuario(m,c)&&!m.lido).length;}
+// Uma conversa por CHAMADO (antes era uma por usuário): cada chamado tem seu chat próprio.
 function listaConversas(){
-    const mapa=new Map();
-    todosOsChamados.forEach(({c,id})=>{if(!c.ownerUid)return;if(!mapa.has(c.ownerUid))mapa.set(c.ownerUid,[]);mapa.get(c.ownerUid).push({c,id});});
-    const convs=[];
-    mapa.forEach((chs,uid)=>{
-        const ord=chs.slice().sort((a,b)=>millisCriacao(a.c)-millisCriacao(b.c));
-        const ult=ord[ord.length-1];
-        let ultimaMsg=null;ord.forEach(({c})=>{const ms=c.mensagens||[];if(ms.length)ultimaMsg=ms[ms.length-1];});
-        const naoLidas=ord.reduce((n,{c})=>n+naoLidasChamado(c),0);
-        const ativo=ord.some(({c})=>c.status!=="Concluído");
-        convs.push({uid,nome:nomeDoOwner(uid,ult.c),ultimaMsg,naoLidas,ativo,ordem:millisCriacao(ult.c)});
-    });
-    return convs.sort((a,b)=>b.ordem-a.ordem);
+    return todosOsChamados
+        .filter(({c})=>c.ownerUid)
+        .map(({c,id})=>{
+            const ms=c.mensagens||[];
+            return {
+                id,                                   // id do chamado
+                nome:nomeDoOwner(c.ownerUid,c),
+                titulo:c.titulo||'Chamado',
+                ultimaMsg:ms.length?ms[ms.length-1]:null,
+                naoLidas:naoLidasChamado(c),
+                ativo:c.status!=="Concluído",
+                ordem:millisCriacao(c)
+            };
+        })
+        .sort((a,b)=>b.ordem-a.ordem);
 }
 function totalNaoLidasChats(){return listaConversas().reduce((n,cv)=>n+cv.naoLidas,0);}
 
@@ -1097,11 +1099,11 @@ function renderListaConversas(){
     const convs=listaConversas();
     cont.innerHTML=convs.length?convs.map(cv=>{
         const prev=cv.ultimaMsg?`${cv.ultimaMsg.autor==='Sistema'?'':esc(cv.ultimaMsg.autor)+': '}${previaMensagem(cv.ultimaMsg)}`:'Sem mensagens';
-        return `<div class="chat-item ${cv.uid===chatFocoUid?'ativo':''}" onclick="window.abrirChat('${cv.uid}')">
+        return `<div class="chat-item ${cv.id===chatFocoId?'ativo':''}" onclick="window.abrirChat('${cv.id}')">
             <div class="chat-avatar">${iniciaisChat(cv.nome)}</div>
             <div class="chat-item-body">
-                <div class="chat-item-top"><span class="chat-item-nome">${esc(cv.nome)}</span><span class="chat-dot ${cv.ativo?'on':'off'}" title="${cv.ativo?'Chamado ativo':'Sem chamado ativo'}"></span></div>
-                <div class="chat-item-top"><span class="chat-item-prev">${prev}</span>${cv.naoLidas>0?`<span class="chat-unread">${cv.naoLidas}</span>`:''}</div>
+                <div class="chat-item-top"><span class="chat-item-nome">${esc(cv.titulo)}</span><span class="chat-dot ${cv.ativo?'on':'off'}" title="${cv.ativo?'Chamado ativo':'Chamado finalizado'}"></span></div>
+                <div class="chat-item-top"><span class="chat-item-prev">${esc(cv.nome)} · ${prev}</span>${cv.naoLidas>0?`<span class="chat-unread">${cv.naoLidas}</span>`:''}</div>
             </div>
         </div>`;
     }).join(''):`<div class="empty-state"><i class="bi bi-chat"></i><p>Nenhuma conversa ainda.</p></div>`;
@@ -1122,44 +1124,41 @@ function bolhaMsgChat(m,nomeUsuario){
     </div>`;
 }
 
-function renderConversa(uid){
-    const chs=chamadosDoOwner(uid);
+function renderConversa(chamadoId){
+    const item=todosOsChamados.find(({id})=>id===chamadoId);
     const empty=document.getElementById('chatEmpty'),conv=document.getElementById('chatConversa');
-    if(!chs.length){empty.style.display='';conv.style.display='none';return;}
+    if(!item){empty.style.display='';conv.style.display='none';return;}
     empty.style.display='none';conv.style.display='';
-    const nome=nomeDoOwner(uid,chs[chs.length-1].c);
-    const atual=chs[chs.length-1];               // chamado mais recente = "referente" no topo
-    const ativo=atual.c.status!=="Concluído";
+    const {c,id}=item;
+    const nome=nomeDoOwner(c.ownerUid,c);
+    const ativo=c.status!=="Concluído";
     let acoes='';
     if(ativo){
-        if(!atual.c.tecnicoResponsavel)acoes=`<button class="act act-primary" style="padding:6px 12px;width:auto;" onclick="window.capturar('${atual.id}')">Capturar</button>`;
-        else if(atual.c.tecnicoResponsavel===tNome)acoes=`<button class="act act-fim" style="padding:6px 12px;width:auto;" onclick="window.abrirModalFinalizar('${atual.id}')">Finalizar</button><button class="act act-transf" style="padding:6px 12px;width:auto;" onclick="window.abrirModalTransferir('${atual.id}')">Transferir</button>`;
+        if(!c.tecnicoResponsavel)acoes=`<button class="act act-primary" style="padding:6px 12px;width:auto;" onclick="window.capturar('${id}')">Capturar</button>`;
+        else if(c.tecnicoResponsavel===tNome)acoes=`<button class="act act-fim" style="padding:6px 12px;width:auto;" onclick="window.abrirModalFinalizar('${id}')">Finalizar</button><button class="act act-transf" style="padding:6px 12px;width:auto;" onclick="window.abrirModalTransferir('${id}')">Transferir</button>`;
     }
+    const dt=c.dataCriacao?.toDate?.();
     document.getElementById('chatHeader').innerHTML=`
         <div class="chat-avatar">${iniciaisChat(nome)}</div>
         <div class="chat-header-info">
-            <div class="chat-header-nome">${esc(nome)}</div>
+            <div class="chat-header-nome">${esc(c.titulo||'Chamado')}</div>
             <div class="chat-header-sub">
-                <span class="chat-chamado-badge"><i class="bi bi-ticket-detailed"></i> ${esc(atual.c.titulo||'Chamado')}</span>
+                <span class="chat-chamado-badge"><i class="bi bi-person-fill"></i> ${esc(nome)}</span>
                 <span class="chat-status ${ativo?'ativo':'fim'}">${ativo?'Ativo':'Finalizado'}</span>
-                ${atual.c.tecnicoResponsavel?`<span class="chat-chamado-badge"><i class="bi bi-person-fill"></i> ${esc(atual.c.tecnicoResponsavel)}</span>`:''}
+                ${c.tecnicoResponsavel?`<span class="chat-chamado-badge"><i class="bi bi-headset"></i> ${esc(c.tecnicoResponsavel)}</span>`:''}
             </div>
         </div>
         <div class="chat-header-acoes">${acoes}</div>`;
-    let html='';
-    chs.forEach(({c})=>{
-        const dt=c.dataCriacao?.toDate?.();
-        const st=c.status==="Concluído"?'Finalizado':(c.tecnicoResponsavel?'Em atendimento':'Aguardando técnico');
-        html+=`<div class="chat-sep"><b>${esc(c.titulo||'Chamado')}</b> · ${esc(c.urgencia||'—')} · aberto em ${dt?esc(dt.toLocaleDateString('pt-BR')):'—'} · <span class="chat-sep-status">${st}</span></div>`;
-        const ms=c.mensagens||[];
-        if(ms.length)ms.forEach(m=>{html+=bolhaMsgChat(m,c.nome);});
-        else html+=`<div class="msg-sistema">Nenhuma mensagem neste chamado ainda.</div>`;
-    });
-    // Bolhas otimistas (enviando/falhou) das mensagens ainda não confirmadas no Firestore.
-    pendentesChat.filter(p=>chs.some(({id})=>id===p.chamadoId)).forEach(p=>{html+=bolhaPendenteChat(p);});
+    const st=c.status==="Concluído"?'Finalizado':(c.tecnicoResponsavel?'Em atendimento':'Aguardando técnico');
+    let html=`<div class="chat-sep"><b>${esc(c.titulo||'Chamado')}</b> · ${esc(c.urgencia||'—')} · aberto em ${dt?esc(dt.toLocaleDateString('pt-BR')):'—'} · <span class="chat-sep-status">${st}</span></div>`;
+    const ms=c.mensagens||[];
+    if(ms.length)ms.forEach(m=>{html+=bolhaMsgChat(m,c.nome);});
+    else html+=`<div class="msg-sistema">Nenhuma mensagem neste chamado ainda.</div>`;
+    // Bolhas otimistas (enviando/falhou) deste chamado, ainda não confirmadas no Firestore.
+    pendentesChat.filter(p=>p.chamadoId===id).forEach(p=>{html+=bolhaPendenteChat(p);});
     const thread=document.getElementById('chatThread');
     thread.innerHTML=html;thread.scrollTop=thread.scrollHeight;
-    renderComposerChat(atual,ativo);
+    renderComposerChat(item,ativo);
 }
 
 function renderComposerChat(atual,ativo){
@@ -1209,7 +1208,7 @@ function bolhaPendenteChat(p){
     </div>`;
 }
 async function tentarEnviarPendente(p){
-    p.status='enviando';renderConversa(chatFocoUid);
+    p.status='enviando';renderConversa(chatFocoId);
     try{
         const anexos=p.arquivos.length?await subirAnexos(await auth.currentUser.getIdToken(),p.chamadoId,'mensagens',p.arquivos):[];
         const ref=doc(db,"chamados",p.chamadoId);const sn=await getDoc(ref);
@@ -1222,41 +1221,41 @@ async function tentarEnviarPendente(p){
         novas.push(nova);
         await updateDoc(ref,{mensagens:novas});
         pendentesChat=pendentesChat.filter(x=>x!==p);   // sucesso: o snapshot traz a mensagem real
-        if(chatFocoUid)renderConversa(chatFocoUid);
-    }catch(e){console.error('[chat] falha ao enviar',e);p.status='falhou';if(chatFocoUid)renderConversa(chatFocoUid);}
+        if(chatFocoId)renderConversa(chatFocoId);
+    }catch(e){console.error('[chat] falha ao enviar',e);p.status='falhou';if(chatFocoId)renderConversa(chatFocoId);}
 }
 window.reenviarPendenteChat=(tempId)=>{const p=pendentesChat.find(x=>x.tempId===tempId);if(p)tentarEnviarPendente(p);};
-window.descartarPendenteChat=(tempId)=>{pendentesChat=pendentesChat.filter(x=>x.tempId!==tempId);if(chatFocoUid)renderConversa(chatFocoUid);};
+window.descartarPendenteChat=(tempId)=>{pendentesChat=pendentesChat.filter(x=>x.tempId!==tempId);if(chatFocoId)renderConversa(chatFocoId);};
 async function enviarMensagemChat(chamadoId){
     const ta=document.getElementById('chatTexto');const txt=(ta?.value||'').trim();
     if(!txt&&!arquivosChat.length)return;
     const p={tempId:'tmp'+Date.now()+Math.random().toString(16).slice(2),chamadoId,texto:txt,arquivos:arquivosChat.slice(),data:new Date().toLocaleString('pt-BR'),status:'enviando'};
     pendentesChat.push(p);
     arquivosChat=[];if(ta)ta.value='';redesenharPreviewChat();
-    renderConversa(chatFocoUid);
+    renderConversa(chatFocoId);
     await tentarEnviarPendente(p);
 }
-async function marcarLidasDoOwner(uid){
-    for(const {c,id} of chamadosDoOwner(uid)){
-        if(!(c.mensagens||[]).some(m=>ehDoUsuario(m,c)&&!m.lido))continue;
-        const novas=(c.mensagens||[]).map(m=>(ehDoUsuario(m,c)&&!m.lido)?{...m,lido:true}:m);
-        try{await updateDoc(doc(db,"chamados",id),{mensagens:novas});}catch(e){console.error('[chat] falha ao marcar lidas',e);}
-    }
+async function marcarLidasChamado(chamadoId){
+    const item=todosOsChamados.find(({id})=>id===chamadoId);if(!item)return;
+    const {c,id}=item;
+    if(!(c.mensagens||[]).some(m=>ehDoUsuario(m,c)&&!m.lido))return;
+    const novas=(c.mensagens||[]).map(m=>(ehDoUsuario(m,c)&&!m.lido)?{...m,lido:true}:m);
+    try{await updateDoc(doc(db,"chamados",id),{mensagens:novas});}catch(e){console.error('[chat] falha ao marcar lidas',e);}
 }
 function renderChats(){
     renderListaConversas();
-    if(chatFocoUid&&todosOsChamados.some(({c})=>c.ownerUid===chatFocoUid))renderConversa(chatFocoUid);
-    else{chatFocoUid=null;const e=document.getElementById('chatEmpty'),cv=document.getElementById('chatConversa');if(e)e.style.display='';if(cv)cv.style.display='none';}
+    if(chatFocoId&&todosOsChamados.some(({id})=>id===chatFocoId))renderConversa(chatFocoId);
+    else{chatFocoId=null;const e=document.getElementById('chatEmpty'),cv=document.getElementById('chatConversa');if(e)e.style.display='';if(cv)cv.style.display='none';}
 }
-window.abrirChat=(uid)=>{
-    if(!uid)return;
-    chatFocoUid=uid;arquivosChat=[];
+window.abrirChat=(chamadoId)=>{
+    if(!chamadoId)return;
+    chatFocoId=chamadoId;arquivosChat=[];
     visaoAtual='Chats';
     document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
     const nav=document.querySelector('[data-filtro="Chats"]');if(nav)nav.classList.add('active');
     ['viewDashboard','viewChamados','viewCadastros','viewPerfil'].forEach(v=>{const el=document.getElementById(v);if(el)el.style.display='none';});
     document.getElementById('viewChats').style.display='';
-    renderListaConversas();renderConversa(uid);marcarLidasDoOwner(uid);
+    renderListaConversas();renderConversa(chamadoId);marcarLidasChamado(chamadoId);
 };
 
 window.capturar=async(id)=>{

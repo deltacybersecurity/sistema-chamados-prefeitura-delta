@@ -418,6 +418,17 @@
     .uchat-status.on{background:rgba(34,197,94,.14);color:#16a34a;}
     .uchat-status.off{background:var(--surface-2);color:var(--text-soft);border:1px solid var(--border);}
     .uchat-thread{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--surface-2);}
+    /* Lista de conversas do usuário (uma por chamado) e botão de voltar à lista */
+    .uconv-item{width:100%;display:flex;align-items:center;gap:11px;text-align:left;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 12px;cursor:pointer;transition:border-color .15s ease,background .15s ease;font-family:inherit;}
+    .uconv-item:hover{border-color:var(--border-strong);background:var(--surface-2);}
+    .uconv-ico{width:38px;height:38px;flex-shrink:0;display:grid;place-items:center;border-radius:50%;background:var(--accent-soft);color:var(--text-muted);font-size:1.05rem;}
+    .uconv-body{flex:1;min-width:0;}
+    .uconv-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+    .uconv-titulo{font-weight:700;font-size:.86rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .uconv-prev{font-size:.75rem;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;}
+    .uconv-badge{flex-shrink:0;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red);color:#fff;font-size:.66rem;font-weight:800;display:grid;place-items:center;}
+    .uchat-back{width:30px;height:30px;flex-shrink:0;border:none;background:transparent;color:var(--text-muted);border-radius:8px;cursor:pointer;display:grid;place-items:center;font-size:1.05rem;}
+    .uchat-back:hover{background:var(--surface-2);color:var(--text);}
     .uchat-sep{align-self:center;max-width:92%;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 12px;font-size:.7rem;color:var(--text-muted);margin:10px 0 2px;box-shadow:var(--shadow);}
     .uchat-sep b{color:var(--text);}
     .uchat-sys{align-self:center;font-size:.68rem;color:var(--text-soft);text-align:center;padding:2px 8px;}
@@ -562,8 +573,8 @@
             <div class="desc-pessoal"><strong><i class="bi bi-info-circle me-1"></i>Sua solicitação:</strong><br>${esc(c.descricao || 'Sem descrição.')}</div>
             ${renderAnexosEnviados(c.anexos)}
             ${concluido && c.solucao ? `<div class="sol-box"><strong><i class="bi bi-check-circle me-1"></i>Solução aplicada:</strong><br>${esc(c.solucao)}</div>` : ''}
-            <button onclick="window.abrirChatUsuario()" class="btn-responder">
-                <i class="bi bi-chat-dots"></i> Abrir chat ${temNotif ? '<span class="notif-dot"></span>' : ''}
+            <button onclick="window.abrirConversaUsuario('${id}')" class="btn-responder">
+                <i class="bi bi-chat-dots"></i> Abrir conversa ${temNotif ? '<span class="notif-dot"></span>' : ''}
             </button>
         </div>`;
     }
@@ -575,6 +586,8 @@
             cont.style.display = 'none';
             chatView.style.display = 'block';
             renderChatUsuario();
+            // Ao visualizar uma conversa, marca como lidas as mensagens do técnico (guardado: só grava se houver não-lidas).
+            if (chatFocoIdU) marcarLidasConversaU(chatFocoIdU);
             return;
         }
         cont.style.display = '';
@@ -596,15 +609,15 @@
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         el.classList.add('active');
         render();
-        if (tab === 'chat') marcarLidasUsuario();
     };
 
     window.toggleForm = () => {
         document.getElementById('formPanel').classList.toggle('open');
     };
 
-    // ===== Chat do usuário: thread única com todos os seus chamados =====
+    // ===== Chat do usuário: uma conversa por chamado =====
     let arquivosUChat = [];
+    let chatFocoIdU = null;   // id do chamado aberto no chat (null = mostra a lista de conversas)
     // Mensagens enviadas de forma otimista: aparecem na hora e guardam o estado
     // "enviando" ou "falhou" até o Firestore confirmar / o usuário reenviar.
     let pendentesUChat = [];
@@ -644,57 +657,85 @@
     window.reenviarPendenteUChat = (tempId) => { const p = pendentesUChat.find(x => x.tempId === tempId); if (p) tentarEnviarPendenteU(p); };
     window.descartarPendenteUChat = (tempId) => { pendentesUChat = pendentesUChat.filter(x => x.tempId !== tempId); renderChatUsuario(); };
 
-    function chamadosCronologico() {
-        // meusChamados vem em ordem desc; aqui devolve asc (mais antigo -> mais novo)
-        return meusChamados.slice().sort((a, b) => (a.c.dataCriacao?.toMillis?.() || 0) - (b.c.dataCriacao?.toMillis?.() || 0));
+    // Prévia curta da última mensagem, para a lista de conversas.
+    function previaMsgU(m) {
+        if (m.anexos && m.anexos.length) {
+            const temImg = m.anexos.some(a => (a.tipo || '').startsWith('image/'));
+            const rotulo = temImg ? '📷 Foto' : '📎 Anexo';
+            const texto = (m.texto && m.texto !== '(anexo enviado)') ? ' ' + esc(m.texto.slice(0, 28)) : '';
+            return rotulo + texto;
+        }
+        return esc((m.texto || '').slice(0, 40));
     }
 
     function renderChatUsuario() {
-        const chs = chamadosCronologico();
         const header = document.getElementById('uchatHeader');
         const thread = document.getElementById('uchatThread');
         const composer = document.getElementById('uchatComposer');
-        if (!chs.length) {
+        if (!meusChamados.length) {
             header.innerHTML = `<div class="uchat-avatar"><i class="bi bi-headset"></i></div><div class="uchat-h-info"><div class="uchat-h-nome">Suporte Técnico</div></div>`;
             thread.innerHTML = `<div class="uchat-sys">Você ainda não abriu nenhum chamado. Clique em "Abrir novo chamado" para começar a conversar com o suporte.</div>`;
             composer.innerHTML = `<div class="uchat-lock"><i class="bi bi-lock-fill"></i> Abra um chamado para conversar com o suporte.</div>`;
             return;
         }
-        const atual = meusChamados[0];            // mais recente (meusChamados está desc) = "referente" no topo
-        const ativo = atual.c.status !== 'Concluído';
+        const foco = chatFocoIdU ? meusChamados.find(x => x.id === chatFocoIdU) : null;
+        if (!foco) {
+            // ----- Modo LISTA: uma conversa por chamado (meusChamados está desc = mais recente primeiro) -----
+            header.innerHTML = `
+                <div class="uchat-avatar"><i class="bi bi-chat-left-text"></i></div>
+                <div class="uchat-h-info">
+                    <div class="uchat-h-nome">Minhas conversas</div>
+                    <div class="uchat-h-sub"><span class="uchat-badge">Toque em um chamado para abrir a conversa</span></div>
+                </div>`;
+            thread.innerHTML = meusChamados.map(({ id, c }) => {
+                const ms = c.mensagens || [];
+                const ult = ms.length ? ms[ms.length - 1] : null;
+                const naoLidas = ms.filter(m => ehTecnico(m, c) && m.lido === false).length;
+                const ativo = c.status !== 'Concluído';
+                const prev = ult ? `${ult.autor === 'Sistema' ? '' : esc(ult.autor) + ': '}${previaMsgU(ult)}` : 'Sem mensagens ainda';
+                return `<button type="button" class="uconv-item" onclick="window.abrirConversaUsuario('${id}')">
+                    <div class="uconv-ico"><i class="bi bi-headset"></i></div>
+                    <div class="uconv-body">
+                        <div class="uconv-top"><span class="uconv-titulo">${esc(c.titulo || 'Chamado')}</span><span class="uchat-status ${ativo ? 'on' : 'off'}">${ativo ? 'Ativo' : 'Finalizado'}</span></div>
+                        <div class="uconv-prev">${prev}</div>
+                    </div>
+                    ${naoLidas > 0 ? `<span class="uconv-badge">${naoLidas}</span>` : ''}
+                </button>`;
+            }).join('');
+            composer.innerHTML = `<div class="uchat-lock"><i class="bi bi-chat-dots"></i> Escolha um chamado acima para conversar.</div>`;
+            return;
+        }
+        // ----- Modo CONVERSA: um único chamado -----
+        const { id, c } = foco;
+        const ativo = c.status !== 'Concluído';
         header.innerHTML = `
+            <button type="button" class="uchat-back" onclick="window.voltarListaUsuario()" title="Voltar às conversas"><i class="bi bi-arrow-left"></i></button>
             <div class="uchat-avatar"><i class="bi bi-headset"></i></div>
             <div class="uchat-h-info">
-                <div class="uchat-h-nome">Suporte Técnico · Prefeitura de Delta</div>
+                <div class="uchat-h-nome">${esc(c.titulo || 'Chamado')}</div>
                 <div class="uchat-h-sub">
-                    <span class="uchat-badge"><i class="bi bi-ticket-detailed"></i> ${esc(atual.c.titulo || 'Chamado')}</span>
                     <span class="uchat-status ${ativo ? 'on' : 'off'}">${ativo ? 'Ativo' : 'Finalizado'}</span>
-                    ${atual.c.tecnicoResponsavel ? `<span class="uchat-badge"><i class="bi bi-person-fill"></i> ${esc(atual.c.tecnicoResponsavel)}</span>` : ''}
+                    ${c.tecnicoResponsavel ? `<span class="uchat-badge"><i class="bi bi-person-fill"></i> ${esc(c.tecnicoResponsavel)}</span>` : ''}
                 </div>
             </div>`;
         let html = '';
-        chs.forEach(({ c }) => {
-            const dt = c.dataCriacao?.toDate?.();
-            const st = c.status === 'Concluído' ? 'Finalizado' : (c.tecnicoResponsavel ? 'Em atendimento' : 'Aguardando técnico');
-            html += `<div class="uchat-sep"><b>${esc(c.titulo || 'Chamado')}</b> · aberto em ${dt ? esc(dt.toLocaleDateString('pt-BR')) : '—'} · ${st}</div>`;
-            const ms = c.mensagens || [];
-            if (!ms.length) html += `<div class="uchat-sys">Aguardando atendimento...</div>`;
-            ms.forEach(m => {
-                if (m.autor === 'Sistema') { html += `<div class="uchat-sys">${esc(m.texto)}</div>`; return; }
-                const tec = ehTecnico(m, c);
-                // Recibo só nas mensagens do próprio usuário (me): ✓ entregue / ✓✓ azul quando o técnico visualizou.
-                const recibo = tec ? '' : reciboMsgU(m);
-                html += `<div class="uchat-wrap ${tec ? 'them' : 'me'}">
-                    <span class="uchat-autor ${tec ? 'tec' : ''}">${tec ? '<i class="bi bi-headset"></i> ' : ''}${esc(m.autor)}</span>
-                    <div class="uchat-bubble">${esc(m.texto)}${renderAnexosEnviados(m.anexos)}<span class="uchat-time">${esc(m.data || '')}${recibo}</span></div>
-                </div>`;
-            });
+        const ms = c.mensagens || [];
+        if (!ms.length) html += `<div class="uchat-sys">Aguardando atendimento...</div>`;
+        ms.forEach(m => {
+            if (m.autor === 'Sistema') { html += `<div class="uchat-sys">${esc(m.texto)}</div>`; return; }
+            const tec = ehTecnico(m, c);
+            // Recibo só nas mensagens do próprio usuário (me): ✓ entregue / ✓✓ azul quando o técnico visualizou.
+            const recibo = tec ? '' : reciboMsgU(m);
+            html += `<div class="uchat-wrap ${tec ? 'them' : 'me'}">
+                <span class="uchat-autor ${tec ? 'tec' : ''}">${tec ? '<i class="bi bi-headset"></i> ' : ''}${esc(m.autor)}</span>
+                <div class="uchat-bubble">${esc(m.texto)}${renderAnexosEnviados(m.anexos)}<span class="uchat-time">${esc(m.data || '')}${recibo}</span></div>
+            </div>`;
         });
-        // Bolhas otimistas (enviando/falhou) das mensagens ainda não confirmadas no Firestore.
-        pendentesUChat.filter(p => chs.some(({ id }) => id === p.chamadoId)).forEach(p => { html += bolhaPendenteUChat(p); });
+        // Bolhas otimistas (enviando/falhou) deste chamado, ainda não confirmadas no Firestore.
+        pendentesUChat.filter(p => p.chamadoId === id).forEach(p => { html += bolhaPendenteUChat(p); });
         thread.innerHTML = html;
         thread.scrollTop = thread.scrollHeight;
-        renderComposerUsuario(atual, ativo);
+        renderComposerUsuario(foco, ativo);
     }
 
     function renderComposerUsuario(atual, ativo) {
@@ -740,17 +781,22 @@
         renderChatUsuario();
         await tentarEnviarPendenteU(p);
     }
-    async function marcarLidasUsuario() {
-        for (const { id, c } of meusChamados) {
-            if (!(c.mensagens || []).some(m => ehTecnico(m, c) && !m.lido)) continue;
-            const novas = (c.mensagens || []).map(m => (ehTecnico(m, c) && !m.lido) ? { ...m, lido: true } : m);
-            try { await updateDoc(doc(db, 'chamados', id), { mensagens: novas }); } catch (e) { console.error('[painel] falha ao marcar lidas', e); }
-        }
+    async function marcarLidasConversaU(id) {
+        const item = meusChamados.find(x => x.id === id);
+        if (!item) return;
+        const c = item.c;
+        if (!(c.mensagens || []).some(m => ehTecnico(m, c) && !m.lido)) return;
+        const novas = (c.mensagens || []).map(m => (ehTecnico(m, c) && !m.lido) ? { ...m, lido: true } : m);
+        try { await updateDoc(doc(db, 'chamados', id), { mensagens: novas }); } catch (e) { console.error('[painel] falha ao marcar lidas', e); }
     }
-    window.abrirChatUsuario = () => {
+    // Abre a conversa de um chamado específico (a partir do card ou da lista de conversas).
+    window.abrirConversaUsuario = (id) => {
+        chatFocoIdU = id;
         const btn = document.querySelector('.tab[data-tab="chat"]');
-        if (btn) window.trocarTab('chat', btn);
+        if (btn) window.trocarTab('chat', btn); else renderChatUsuario();
     };
+    // Volta da conversa para a lista de conversas.
+    window.voltarListaUsuario = () => { chatFocoIdU = null; renderChatUsuario(); };
 
     // ===== Anexos do formulário de abertura =====
     let arquivosAbertura = [];
