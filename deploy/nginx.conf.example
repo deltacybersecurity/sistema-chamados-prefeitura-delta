@@ -1,0 +1,54 @@
+# Exemplo de configuração do nginx para o Sistema de Chamados Delta.
+#
+# O nginx faz DUAS coisas:
+#   1) serve os arquivos estáticos do site (a pasta public/ do repositório);
+#   2) faz proxy de /api e /uploads para a API Flask (server/app.py) em 127.0.0.1:5001.
+#
+# Sem os blocos "location /api/" e "location /uploads/" abaixo, o envio e a
+# exibição de anexos falham com 404 (o nginx não sabe pra onde mandar).
+#
+# Como usar (na VPS):
+#   sudo cp deploy/nginx.conf.example /etc/nginx/sites-available/delta
+#   # ajuste `root`, `server_name` e os caminhos
+#   sudo ln -s /etc/nginx/sites-available/delta /etc/nginx/sites-enabled/delta
+#   sudo nginx -t          # testa a sintaxe
+#   sudo systemctl reload nginx
+
+server {
+    listen 80;
+    server_name 10.0.0.190;          # troque pelo IP/domínio do site
+
+    # Pasta public/ do repositório na VPS (AJUSTE o caminho):
+    root /home/cyber/sistema-chamados-prefeitura-delta/public;
+    index index.html;
+
+    # Anexos: até 5 arquivos de 10MB por envio. SEM esta linha o nginx corta
+    # uploads maiores que 1MB com "413 Request Entity Too Large".
+    client_max_body_size 60m;
+
+    # --- Upload de anexos: encaminha pro Flask ---
+    location /api/ {
+        proxy_pass http://127.0.0.1:5001;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # --- Download/exibição dos anexos ---
+    # Opção A (simples): o Flask serve os arquivos (rota /uploads/<path> do app.py).
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:5001;
+        proxy_set_header Host $host;
+    }
+    # Opção B (mais rápida): o nginx serve direto do disco, sem passar pelo Flask.
+    # Para usar, comente o location acima e descomente este (AJUSTE o caminho):
+    # location /uploads/ {
+    #     alias /home/cyber/sistema-chamados-prefeitura-delta/server/uploads/;
+    # }
+
+    # Site estático (index.html, painel.html, admin.html, ...).
+    error_page 404 /404.html;
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

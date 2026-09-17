@@ -1,0 +1,28 @@
+# systemd unit para manter a API de anexos (Flask/gunicorn) sempre no ar,
+# reiniciando sozinha se cair ou se a VPS reiniciar.
+#
+# Instalação (na VPS):
+#   sudo cp server/delta-anexos.service /etc/systemd/system/
+#   # ajuste User, WorkingDirectory e ExecStart conforme o caminho real do projeto
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now delta-anexos
+#   sudo systemctl status delta-anexos      # deve ficar "active (running)"
+#   journalctl -u delta-anexos -f           # ver logs em tempo real
+
+[Unit]
+Description=API de anexos - Sistema de Chamados Delta (Flask/gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=cyber
+# Caminho onde está a pasta server/ do projeto na VPS (AJUSTE se for diferente):
+WorkingDirectory=/home/cyber/sistema-chamados-prefeitura-delta/server
+Environment=FIREBASE_CREDENTIALS_FILE=sistema-chamados-firebase-adminsdk.json
+# Usa o gunicorn do virtualenv criado em server/venv (AJUSTE se instalou de outro jeito):
+ExecStart=/home/cyber/sistema-chamados-prefeitura-delta/server/venv/bin/gunicorn app:app --bind 127.0.0.1:5001 --workers 2
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

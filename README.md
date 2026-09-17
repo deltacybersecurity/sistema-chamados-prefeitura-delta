@@ -27,8 +27,29 @@ Como um projeto focado em **Cybersecurity**, o sistema utiliza camadas de prote�
 ## 💻 Tecnologias Utilizadas
 
 * **Frontend:** HTML5, CSS3 (Glassmorphism UI) e Bootstrap 5.
-* **Backend:** Firebase Firestore (NoSQL) para sincronização Realtime.
+* **Banco de dados:** Firebase Firestore (NoSQL) para sincronização Realtime.
+* **Anexos:** API própria em Flask (`server/app.py`) que salva os arquivos em disco na VPS — os anexos **não** vão para o Firebase (evita o custo de armazenamento). O Firestore guarda só os metadados (nome, tipo, tamanho, url).
 * **Documentação:** jsPDF e AutoTable para geração de documentos oficiais.
+
+## 🌐 Arquitetura & Deploy (VPS)
+
+O site é servido pela **própria VPS** (nginx), e o Firebase é usado **apenas como banco de dados**. O nginx faz duas coisas: serve os estáticos de `public/` e faz **proxy de `/api` e `/uploads` para a API Flask** (`server/app.py`, em `127.0.0.1:5001`).
+
+> ⚠️ Se faltarem os blocos `location /api/` e `location /uploads/` no nginx, o **envio e a exibição de anexos falham com 404** (o chat de texto continua funcionando, pois vai direto no Firestore).
+
+**1. API de anexos (Flask):**
+```bash
+cd server
+python3 -m venv venv && . venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env            # e preencha FIREBASE_CREDENTIALS_FILE
+# coloque o JSON da service account do Firebase Admin dentro de server/
+```
+Para manter no ar, instale o serviço systemd de `server/delta-anexos.service` (instruções no topo do arquivo).
+
+**2. nginx:** use `deploy/nginx.conf.example` como base (contém os blocos de proxy e o `client_max_body_size` necessário para uploads). Depois: `sudo nginx -t && sudo systemctl reload nginx`.
+
+**3. Teste rápido:** `curl -i -X POST http://SEU_IP/api/chamados/teste/anexos` deve responder **401** (`{"erro":"Token de autenticação ausente."}`). Se responder **404**, o proxy do nginx ainda não está ativo.
 
 ---
 *Gerenciado e Protegido por Delta Cyber Security LTDA.*
